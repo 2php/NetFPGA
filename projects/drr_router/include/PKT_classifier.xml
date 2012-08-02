@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nf:module xmlns:nf="http://www.NetFPGA.org/NF2_register_system" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.NetFPGA.org/NF2_register_system NF2_register_system.xsd ">
+	<nf:name>drr_qclass</nf:name>
+	<nf:prefix>drr_qclass</nf:prefix>
+	<nf:location>udp</nf:location>
+	<nf:description>Packet Classifier's Registers</nf:description>
+	<nf:blocksize>64</nf:blocksize>
+	<nf:registers>
+		<nf:register>
+			<nf:name>q0_num_pkts</nf:name>
+			<nf:description>Number of packets classified for Q0</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>q1_num_pkts</nf:name>
+			<nf:description>Number of packets classified for Q1</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>q2_num_pkts</nf:name>
+			<nf:description>Number of packets classified for Q2</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>q3_num_pkts</nf:name>
+			<nf:description>Number of packets classified for Q3</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>q4_num_pkts</nf:name>
+			<nf:description>Number of packets classified for Q4</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+
+		<nf:register>
+			<nf:name>policy</nf:name>
+			<nf:description>Register for choosing classification policy: input port(0)/ToS(1)</nf:description>
+			<nf:type>software32</nf:type>
+		</nf:register>
+
+		<nf:register>
+			<nf:name>q0_tos</nf:name>
+			<nf:description>tos to be classified for Q0</nf:description>
+			<nf:type>software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>q1_tos</nf:name>
+			<nf:description>tos to be classified for Q1</nf:description>
+			<nf:type>software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>q2_tos</nf:name>
+			<nf:description>tos to be classified for Q2</nf:description>
+			<nf:type>software32</nf:type>
+		</nf:register>
+
+		<nf:register>
+			<nf:name>string_policy0</nf:name>
+			<nf:description>a 4byte string showing policy name for policy 0</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>string_policy1</nf:name>
+			<nf:description>a 4byte string showing policy name for policy 1</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>state</nf:name>
+			<nf:description>for debugging - shows internal state</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+
+	</nf:registers>
+</nf:module>

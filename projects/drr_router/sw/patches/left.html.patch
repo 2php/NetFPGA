@@ -1,0 +1,14 @@
+--- orig/www/left.html	2008-06-11 00:14:56.927027000 -0700
++++ new/www/left.html	2008-06-11 00:39:33.158281000 -0700
+@@ -42,6 +42,11 @@
+ 				<li><a href="#" onclick="loadURL('command.html?command=show%20vns%20vhost', false);">vhost</a> <a href="#" onclick="loadURL('command.html?command=show%20vns%20server', false);">server</a></li>
+ 				<li><a href="#" onclick="loadURL('command.html?command=show%20vns%20topology', false);">topology</a></li>
+ 			</ul>
++            <h4>DRR</h4>
++            <ul>
++                <li><a href="#" onclick="loadURL('command.html?command=drr%20show', false);">info</a> <a href="#" onclick="loadURL('command.html?command=drr%20show', true);"><img src="refresh.png" border="0"/></a></li>
++                <li><a href="#" onclick="loadURL('command.html?command=drr%20reset%20stats', false);">reset stats</a></li>
++            </ul>
+ 			<br/>
+ 			<a href="#" onclick="loadURL('list.html', false);">Command List</a><br/>
+ 		</div>

@@ -1,0 +1,1 @@
+cmd_/home/summercamp/netfpga/lib/C/kernel/nf2.o := ld -m elf_i386   -r -o /home/summercamp/netfpga/lib/C/kernel/nf2.o /home/summercamp/netfpga/lib/C/kernel/nf2main.o /home/summercamp/netfpga/lib/C/kernel/nf2_control.o /home/summercamp/netfpga/lib/C/kernel/nf2util.o /home/summercamp/netfpga/lib/C/kernel/nf2_ethtool.o 

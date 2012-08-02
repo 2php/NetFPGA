@@ -1,0 +1,20 @@
+--- orig/Makefile	2008-06-10 17:31:55.311596000 -0700
++++ Makefile	2008-06-10 19:03:53.510450000 -0700
+@@ -37,7 +37,7 @@
+ 
+ #CFLAGS = -g -Wall -D_DEBUG_ $(ARCH) -I lwtcp -D_GNU_SOURCE
+ #Define _NOLWIP_ to bind to use linux sockets and bind to localhost
+-CFLAGS = -g -Wall -D_DEBUG_ $(ARCH) -I lwtcp -I ../../../lib/C/common -D_GNU_SOURCE -D_CPUMODE_
++CFLAGS = -g -Wall -D_DEBUG_ $(ARCH) -I lwtcp -I ../../../../lib/C/common -I ../../lib/C -D_GNU_SOURCE -D_CPUMODE_ -D_OQ_DRR_
+ 
+ LIBS= $(SOCK) -lm -lresolv -lpthread -lpcap -lnet
+ PFLAGS= -follow-child-processes=yes -cache-dir=/tmp/${USER} 
+@@ -63,7 +63,7 @@
+                sr_vns.c sr_cpu_extension_nf2.c or_main.c or_utils.c\
+                or_arp.c or_icmp.c or_ip.c or_iface.c or_rtable.c\
+ 		       or_output.c or_cli.c or_vns.c or_sping.c or_pwospf.c\
+-		       or_dijkstra.c or_netfpga.c or_www.c or_nat.c
++		       or_dijkstra.c or_netfpga.c or_www.c or_nat.c drr.c drr_cli.c
+ 
+ SR_BASE_OBJS = $(patsubst %.c,%.o,$(SR_BASE_SRCS)) nf2/nf2util.o
+ 

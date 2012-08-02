@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nf:module xmlns:nf="http://www.NetFPGA.org/NF2_register_system" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.NetFPGA.org/NF2_register_system NF2_register_system.xsd ">
+	<nf:name>icmp_reply</nf:name>
+	<nf:prefix>icmp_reply</nf:prefix>
+	<nf:location>udp</nf:location>
+	<nf:description>ICMP Reply Registers</nf:description>
+	<nf:blocksize>64</nf:blocksize>
+	<nf:registers>
+		<nf:register>
+			<nf:name>num_pkts_sent</nf:name>
+			<nf:description>ICMP reply number of packets sent</nf:description>
+			<nf:type>generic_counter32</nf:type>
+		</nf:register>	
+		<nf:register>
+			<nf:name>num_icmp_reqs_dropped</nf:name>
+			<nf:description>Number of ICMP requests dropped</nf:description>
+	  	<nf:type>generic_counter32</nf:type>
+  	</nf:register>	
+		<nf:register>
+			<nf:name>num_icmp_replies_sent</nf:name>
+			<nf:description>Number of ICMP replys sent</nf:description>
+	  	<nf:type>generic_counter32</nf:type>
+  	</nf:register>	
+		<nf:register>
+			<nf:name>enable</nf:name>
+			<nf:description>ICMP reply module enable</nf:description>
+	  	<nf:type>generic_software32</nf:type>
+  	</nf:register>
+		<nf:register>
+			<nf:name>eth_addr_port_0</nf:name>
+			<nf:description>Ethernet address for port 0</nf:description>
+	  	<nf:type>ethernet_addr</nf:type>
+  	</nf:register>
+		<nf:register>
+			<nf:name>eth_addr_port_1</nf:name>
+			<nf:description>Ethernet address for port 1</nf:description>
+	  	<nf:type>ethernet_addr</nf:type>
+  	</nf:register>
+		<nf:register>
+			<nf:name>eth_addr_port_2</nf:name>
+			<nf:description>Ethernet address for port 2</nf:description>
+	  	<nf:type>ethernet_addr</nf:type>
+  	</nf:register>
+		<nf:register>
+			<nf:name>eth_addr_port_3</nf:name>
+			<nf:description>Ethernet address for port 3</nf:description>
+	  	<nf:type>ethernet_addr</nf:type>
+  	</nf:register>
+		<nf:register>
+			<nf:name>ip_addr_port_0</nf:name>
+			<nf:description>IP address for port 0</nf:description>
+	  	<nf:type>generic_software32</nf:type>
+  	</nf:register>
+		<nf:register>
+			<nf:name>ip_addr_port_1</nf:name>
+			<nf:description>IP address for port 1</nf:description>
+	  	<nf:type>generic_software32</nf:type>
+  	</nf:register>
+		<nf:register>
+			<nf:name>ip_addr_port_2</nf:name>
+			<nf:description>IP address for port 2</nf:description>
+	  	<nf:type>generic_software32</nf:type>
+  	</nf:register>
+		<nf:register>
+			<nf:name>ip_addr_port_3</nf:name>
+			<nf:description>IP address for port 3</nf:description>
+	  	<nf:type>generic_software32</nf:type>
+  	</nf:register>
+	</nf:registers>
+	<nf:constants>
+		<nf:constant>
+			<nf:name>DONT_TOUCH_SRC_PORT</nf:name>
+     			<nf:value>17</nf:value>
+		</nf:constant>
+	</nf:constants>
+	<nf:types>
+	</nf:types>
+</nf:module>

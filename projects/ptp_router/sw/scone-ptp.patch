@@ -1,0 +1,2183 @@
+diff -x .svn -u -N -r .//cpuhw /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/cpuhw
+--- .//cpuhw	2009-12-02 16:15:52.000000000 -0800
++++ /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/cpuhw	2009-12-02 18:18:29.000000000 -0800
+@@ -1,5 +1,4 @@
+-# Support for full line comments
+-eth0 192.168.0.2 255.255.255.0 00:00:00:00:00:01
+-eth1 192.168.1.2 255.255.255.0 00:00:00:00:00:02
+-eth2 192.168.2.2 255.255.255.0 00:00:00:00:00:03
+-eth3 192.168.3.2 255.255.255.0 00:00:00:00:00:04
++eth0 192.168.0.9 255.255.255.0 00:00:00:00:09:01
++eth1 192.168.1.9 255.255.255.0 00:00:00:00:09:02
++eth2 192.168.2.9 255.255.255.0 00:00:00:00:09:03
++eth3 192.168.3.9 255.255.255.0 00:00:00:00:09:04
+diff -x .svn -u -N -r .//Makefile /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/Makefile
+--- .//Makefile	2009-12-02 16:15:52.000000000 -0800
++++ /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/Makefile	2009-12-02 18:18:29.000000000 -0800
+@@ -9,7 +9,7 @@
+ #
+ #------------------------------------------------------------------------------
+ 
+-all : registers scone
++all : registers scone_ptp
+ 
+ CC  = gcc
+ 
+@@ -31,8 +31,8 @@
+ endif
+ 
+ registers:
+-	$(NF2_ROOT)/bin/nf2_register_gen.pl --project reference_router
+-	ln -f -s $(NF2_ROOT)/projects/reference_router/lib/C/reg_defines_reference_router.h reg_defines.h
++	$(NF2_ROOT)/bin/nf2_register_gen.pl --project ptp_router
++	ln -f -s ../../lib/C/reg_defines_ptp_router.h reg_defines.h
+ 
+ # --
+ # To run the scone in "cpu" mode to interact with the NetFPGA uncomment
+@@ -41,7 +41,7 @@
+ 
+ #CFLAGS = -g -Wall -D_DEBUG_ $(ARCH) -I lwtcp -D_GNU_SOURCE
+ #Define _NOLWIP_ to bind to use linux sockets and bind to localhost
+-CFLAGS = -g -Wall -D_DEBUG_ $(ARCH) -I lwtcp -I ../../../lib/C/common -D_GNU_SOURCE -D_CPUMODE_
++CFLAGS = -g -Wall -D_DEBUG_ $(ARCH) -I lwtcp -I ../../../../lib/C/common -D_GNU_SOURCE -D_CPUMODE_
+ 
+ LIBS= $(SOCK) -lm -lresolv -lpthread -lpcap -lnet
+ PFLAGS= -follow-child-processes=yes -cache-dir=/tmp/${USER} 
+@@ -56,7 +56,6 @@
+ 			 lwtcp/err.c
+ 
+ LWTCP_OBJS = $(patsubst lwtcp/%.c, %.o, $(LWTCP_SRCS)) 
+-             
+ 
+ liblwtcp.a : $(LWTCP_OBJS)
+ 	ar rcu liblwtcp.a $(LWTCP_OBJS)
+@@ -66,8 +65,9 @@
+ SR_BASE_SRCS = sr_base.c sr_dumper.c sr_integration.c sr_lwtcp_glue.c\
+                sr_vns.c sr_cpu_extension_nf2.c or_main.c or_utils.c\
+                or_arp.c or_icmp.c or_ip.c or_iface.c or_rtable.c\
+-		       or_output.c or_cli.c or_vns.c or_sping.c or_pwospf.c\
+-		       or_dijkstra.c or_netfpga.c or_www.c or_nat.c
++		      		 or_output.c or_cli.c or_vns.c or_sping.c or_pwospf.c\
++		      		or_dijkstra.c or_netfpga.c or_www.c or_nat.c \
++							or_ptp_common.c or_ptp_hardware.c or_ptp_util.c
+ 
+ SR_BASE_OBJS = $(patsubst %.c,%.o,$(SR_BASE_SRCS)) nf2/nf2util.o
+ 
+@@ -84,7 +84,11 @@
+ scone : $(SR_OBJS) libsr_base.a liblwtcp.a
+ 	$(CC) $(CFLAGS) -o $@ $(SR_OBJS) $(LIBS) libsr_base.a liblwtcp.a\
+     libsr_base.a /usr/lib/libnet.a
+-    
++
++scone_ptp : $(SR_OBJS) $(PTP_OBJS) libsr_base.a liblwtcp.a
++	$(CC) $(CFLAGS) -o $@ $(SR_OBJS) $(PTP_OBJS) $(LIBS) libsr_base.a liblwtcp.a\
++    libsr_base.a /usr/lib/libnet.a
++
+ purify : $(SR_OBJS) libsr_base.a liblwtcp.a
+ 	purify $(CC) $(CFLAGS) -o $@.purify $(SR_OBJS) $(LIBS) libsr_base.a liblwtcp.a\
+     libsr_base.a /usr/lib/libnet.a
+@@ -135,8 +139,8 @@
+ #------------------------------------------------------------------------------
+ .PHONY : clean clean-deps dist install
+ 
+-clean:
+-	rm -f *.o *~ core.* scone *.dump *.tar tags *.a test_arp_subsystem\
++clean: clean-deps
++	rm -f *.o *~ core.* scone scone_ptp *.dump *.tar tags *.a test_arp_subsystem\
+           lwcli lwtcpsr sr_base.tar.gz
+ 
+ clean-deps:
+diff -x .svn -u -N -r .//or_main.c /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_main.c
+--- .//or_main.c	2009-12-02 16:15:52.000000000 -0800
++++ /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_main.c	2009-12-02 18:18:29.000000000 -0800
+@@ -39,6 +39,7 @@
+ #include "reg_defines.h"
+ #include "or_www.h"
+ #include "or_nat.h"
++#include "or_ptp_common.h"
+ 
+ inline router_state* get_router_state(struct sr_instance* sr) {
+ 	return (router_state*)sr->interface_subsystem;
+@@ -743,6 +744,11 @@
+ 			process_arp_packet(sr, packet, len, interface);
+ 			break;
+ 
++ 		case ETH_TYPE_PTP:
++			printf(" ** -> Received PTP packet of length %d\n", len);
++			or_ptp_process_packet(sr, packet, len, interface);
++			break;
++
+ 		default: break;
+ 	}
+ 	
+diff -x .svn -u -N -r .//or_ptp_common.c /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_common.c
+--- .//or_ptp_common.c	1969-12-31 16:00:00.000000000 -0800
++++ /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_common.c	2009-12-02 18:18:29.000000000 -0800
+@@ -0,0 +1,1403 @@
++/*-----------------------------------------------------------------------------
++ * File: or_ptp_common.c
++ * Authors: Peter Pawlowski
++ *
++ * Description: Module implementing NetFPGA PTP time synchornization support
++ *
++ *---------------------------------------------------------------------------*/
++
++#include "or_ptp_common.h"
++#include "or_ptp_hardware.h"
++#include "or_ptp_linked_list.h"
++#include "or_ptp_util.h"
++
++#include "or_data_types.h"
++#include "or_iface.h"
++#include "or_main.h"
++#include "or_utils.h"
++
++#include <arpa/inet.h>
++#include <assert.h>
++#include <math.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++/* flags controlling whether clock syncing and skew correction is enabled */
++#define SYNC_ENABLED 1
++#define SKEW_CORRECTION_ENABLED 1
++
++/* log sync and pdelay outcomes to these files */
++const char *sync_log_filename = "sync.log";
++const char *pdelay_log_filename = "pdelay.log";
++
++/* use global file handle */
++FILE *sync_log_fd;
++FILE *pdelay_log_fd;
++
++typedef struct _ptp_msg
++{
++    ptp_hdr hdr;
++    ptp_timestamp timestamp;
++    uint8_t identity[10];	
++} __attribute__ ((packed)) ptp_msg;
++
++/* SYNC entry for the PTP cache */
++typedef struct _ptp_sync_entry
++{	
++    const char *interface;
++    uint8_t validity;
++
++    int sync_sequence_id;
++    ptp_timestamp sync_egress;
++    ptp_timestamp sync_ingress;
++
++    int delay_req_sequence_id;
++    ptp_timestamp delay_req_egress;
++    ptp_timestamp delay_req_ingress;
++
++    ptp_timestamp link_delay;
++    ptp_timestamp clock_offset;
++
++    struct _ptp_sync_entry *next, *prev;
++} __attribute__ ((packed)) ptp_sync_entry;
++
++const uint8_t SYNC_EGRESS_VALID = 1;
++const uint8_t SYNC_INGRESS_VALID = 2;
++const uint8_t DELAY_REQ_EGRESS_VALID = 4;
++const uint8_t DELAY_REQ_INGRESS_VALID = 8;
++const uint8_t ALL_VALID = 15;
++
++/* PDELAY entry for the PTP cache */
++typedef struct _ptp_pdelay_entry
++{	
++    const char *interface;
++    uint8_t validity;
++
++    int pdelay_req_sequence_id;
++    ptp_timestamp pdelay_req_egress;
++    ptp_timestamp pdelay_req_ingress;
++
++    int pdelay_resp_sequence_id;
++    ptp_timestamp pdelay_resp_egress;
++    ptp_timestamp pdelay_resp_ingress;
++
++    ptp_timestamp link_delay;
++
++    struct _ptp_pdelay_entry *next, *prev;
++} __attribute__ ((packed)) ptp_pdelay_entry;
++
++const uint8_t PDELAY_REQ_EGRESS_VALID = 1;
++const uint8_t PDELAY_REQ_INGRESS_VALID = 2;
++const uint8_t PDELAY_RESP_EGRESS_VALID = 4;
++const uint8_t PDELAY_RESP_INGRESS_VALID = 8;
++/* ALL_VALID defined above */
++
++/* locks protecting validities on pending_* lists */
++pthread_mutex_t sync_entry_validity_mutex;
++pthread_mutex_t pdelay_entry_validity_mutex;
++
++/* PTP cache lists */
++static ptp_sync_entry *pending_syncs = NULL;
++static ptp_sync_entry *completed_syncs = NULL;
++
++static ptp_pdelay_entry *pending_pdelays = NULL;
++static ptp_pdelay_entry *completed_pdelays = NULL;
++
++/* data structure to describe an event packet waiting to be sent */
++typedef struct _ptp_pending_event_packet
++{
++    const char *interface;
++    uint8_t *frame;
++    unsigned len;
++
++    ptp_message_type type;
++    void *aux_data;
++
++    struct _ptp_pending_event_packet *next, *prev;
++} ptp_pending_event_packet;
++
++/* PTP interface state lists */
++typedef struct _ptp_interface_entry {
++    const char *interface;
++    IFPTPState state;
++
++    /* pending events for this interface */
++    ptp_pending_event_packet *pending_event_packets;
++
++    struct _ptp_interface_entry *next, *prev;
++} ptp_interface_entry;
++
++static ptp_interface_entry *ptp_interfaces = NULL;
++pthread_mutex_t ptp_interfaces_mutex;
++
++/* default interval between PTP SYNC broadcasts */
++static const struct timespec COUNTER_PTP_MSG_INT = { .tv_sec = 1, .tv_nsec = 0 };
++
++/* sleep interval between polling transmit timestamps */
++static const struct timespec COUNTER_PTP_EXTRACT_EGRESS_INT = { .tv_sec = 0, .tv_nsec = 100000 };
++
++/* correct clock for skew each SKEW_CORRECTION_WINDOW */
++const int SKEW_CORRECTION_WINDOW = 60;
++
++/* default source MAC addresses for PTP packets */
++static const uint8_t COUNTER_PTP_ETHER_ADDR[ETH_ADDR_LEN] =
++    {0x01, 0x1B, 0x19, 0x00, 0x00, 0x00};
++
++/* TODO: frames with this MAC get dropped by the NetFPGA. Why?
++ * For now, just use the COUNTER_PTP_ETHER_ADDR. */
++static const uint8_t COUNTER_PTP_PDELAY_ETHER_ADDR[ETH_ADDR_LEN] =
++    {0x10, 0x80, 0xC2, 0x00, 0x00, 0x0E};
++
++typedef struct _ptp_extract_egress_entry
++{
++    const char *interface;
++    ptp_message_type type;
++    void *aux_data;
++
++    unsigned read_attempt_count;
++	
++    struct _ptp_extract_egress_entry *next, *prev;
++} ptp_extract_egress_entry;
++
++pthread_mutex_t ptp_extract_egress_mutex;
++pthread_cond_t ptp_extract_egress_nonempty_cond;
++
++ptp_extract_egress_entry *ptp_extract_egress_entries;
++const unsigned MAX_EGRESS_EXTRACT_COUNT = 128;
++
++
++/*** PROTOTYPES ***/ 
++
++/* thread which sends out periodic SYNC messages */
++static void *ptp_msg_thread(void *r);
++
++/* PTP message sending functions */
++static void send_sync_msg(struct sr_instance *sr, const char *interface);
++static void send_pdelay_req_msg(struct sr_instance *sr, const char *interface);
++static ptp_pending_event_packet *ptp_send_packet(struct sr_instance *sr, 
++						 ptp_hdr *ptp_hdr,
++						 const uint8_t dest_addr[ETH_ADDR_LEN], 
++						 const char *interface);
++
++/* PTP message handlers */
++static void handle_sync_event(struct sr_instance *sr, ptp_hdr *hdr, const char *interface);
++static void handle_delay_req_event(struct sr_instance *sr, ptp_hdr *hdr, const char *interface);
++static void handle_delay_resp_general(struct sr_instance *sr, ptp_hdr *hdr, const char *interface);
++static void handle_followup_general(struct sr_instance *sr, ptp_hdr *hdr, const char *interface);
++
++static void handle_pdelay_req_event(struct sr_instance *sr, ptp_hdr *hdr, const char *interface);
++static void handle_pdelay_resp_event(struct sr_instance *sr, ptp_hdr *hdr, const char *interface);
++static void handle_pdelay_resp_followup_general(struct sr_instance *sr, ptp_hdr *hdr, const char *interface);
++
++/* commit functions. called once all timestamps are valid. */
++static void commit_sync(struct sr_instance *sr, ptp_sync_entry *entry);
++static void commit_pdelay(ptp_pdelay_entry *entry);
++
++/* clock correction functions */
++static void calculate_offsets(ptp_sync_entry *entry);
++static void update_hardware_clock(struct sr_instance *sr, ptp_sync_entry *entry);
++
++/* PTP interface entry manipulation code */
++static ptp_interface_entry *get_interface_entry(const char *interface);
++static IFPTPState get_interface_state(const char *interface);
++
++/* PTP egress timestamp extraction functions */
++static void read_egress_timestamp(const char *interface, ptp_message_type type, void *aux_data);
++static ptp_pending_event_packet *
++buffer_event_packet(struct sr_instance *sr, uint8_t *frame, unsigned len, const char *interface);
++
++/*** IMPLEMENTATION ***/
++
++static ptp_interface_entry *
++get_interface_entry(const char *interface)
++{
++    ptp_interface_entry *walker;
++	
++    for (walker = ptp_interfaces; walker; walker = walker->next) {
++	if (strcmp(walker->interface, interface) == 0) {
++	    return walker;
++	}
++    }
++
++    return NULL;
++}
++
++static IFPTPState 
++get_interface_state(const char *interface)
++{
++    ptp_interface_entry *entry = get_interface_entry(interface);
++	
++    assert(entry && "interface not found!");
++
++    return entry->state;
++}
++
++/* is someone waiting for an egress timestamp on this interface? */
++/* NOT THREAD SAFE: ptp_extract_egress_mutex should be held on entry */
++static unsigned
++pending_events_on_interface(const char *interface)
++{
++    unsigned result = 0;
++
++    ptp_extract_egress_entry *walker = ptp_extract_egress_entries;
++
++    for (walker = ptp_extract_egress_entries; walker; walker = walker->next) {
++	if (!strcmp(walker->interface, interface)) {
++	    result = 1;
++	    break;
++	}
++    }
++	
++    return result;
++}
++
++
++
++/* PTP events are those messages that need timestamps */
++static unsigned 
++is_ptp_event(ptp_message_type type)
++{
++	return type == SyncEvent || type == DelayReqEvent || 
++	       type == PdelayReqEvent || type == PdelayRespEvent;
++}
++
++
++
++/* this thread sends out SYNCs on MASTER interfaces and PDELAY_REQs on all other
++ * interfaces every COUNTER_PTP_MSG_INT */
++static void *ptp_msg_thread(void *r)
++{
++    debug_printf("[PTP] ptp_msg_thread STARTED\n");
++
++    assert(r);
++    struct sr_instance *sr = (struct sr_instance *)r;
++    struct router_state *router = get_router_state(sr);
++
++    while (1) {
++	/* 50 ms delay between sending PTP packets on the same interface to allow
++           the other side to read the timestamp between packets */
++            struct timespec ms_50 = { .tv_sec = 0, .tv_nsec = 50 * 1000 * 1000 };
++
++	ptp_interface_entry *walker;
++	for (walker = ptp_interfaces; walker; walker = walker->next) {
++	    // skip if the interface is disabled
++	    if (!iface_is_active(router, (char *)walker->interface)) {
++		continue;
++	    }
++
++	    if (walker->state == IFPTPState_MASTER) {
++		send_sync_msg(sr, walker->interface);
++	    	/* wait 50 ms, otherwise receiver gets messed up */
++    	    	nanosleep(&ms_50, NULL);
++	    } 
++	    if (walker->state != IFPTPState_SLAVE) {
++		send_pdelay_req_msg(sr, walker->interface);
++	    	/* wait 50 ms, otherwise receiver gets messed up */
++    	    	nanosleep(&ms_50, NULL);
++	    }
++
++	}
++
++	/* read clock for debugging purposes */
++	unsigned s, ns;
++	or_ptp_read_clock(get_router_state(sr), &s, &ns);
++
++	nanosleep(&COUNTER_PTP_MSG_INT, NULL);
++    }
++}
++
++static void 
++process_valid_egress_timestamp(struct sr_instance *sr, 	
++	                       ptp_extract_egress_entry *extract_entry,
++			       ptp_timestamp *ts)
++{
++    switch(extract_entry->type) {
++    case SyncEvent: {
++	ptp_hdr *sync_msg = (ptp_hdr *)extract_entry->aux_data;
++		
++	/* send Followup to the previous SYNC */
++	ptp_msg followup_msg;
++			
++	memcpy(&followup_msg, sync_msg, sizeof(*sync_msg));
++	followup_msg.hdr.type = FollowUpGeneral;
++	memcpy(&followup_msg.timestamp, ts, sizeof(*ts));
++	// NOTE: for now, omit request_port_id
++		
++	debug_printf("[PTP] Sending Followup for SYNC on interface = %s\n", 
++		     extract_entry->interface);
++		
++	ptp_pending_event_packet *buffered = 
++	  ptp_send_packet(sr, (ptp_hdr *)&followup_msg, COUNTER_PTP_ETHER_ADDR, 
++			  extract_entry->interface);
++	assert(!buffered);
++				
++	break;
++    }
++
++    case DelayReqEvent: {
++	/* read egress of DELAY REQ */
++	ptp_sync_entry *entry = (ptp_sync_entry *)extract_entry->aux_data;
++	memcpy(&entry->delay_req_egress, ts, sizeof(*ts));
++
++	pthread_mutex_lock(&sync_entry_validity_mutex);
++	entry->validity |= DELAY_REQ_EGRESS_VALID;
++	pthread_mutex_unlock(&sync_entry_validity_mutex);
++        debug_printf("[PTP] DELAY REQ = %s, validty=%d\n", extract_entry->interface, entry->validity);
++	if (entry->validity == ALL_VALID)
++	    commit_sync(sr, entry);
++			
++	break;
++    }
++			
++    case PdelayReqEvent:  {
++	/* read egress of PDELAY REQ */
++	ptp_pdelay_entry *entry = (ptp_pdelay_entry *)extract_entry->aux_data;
++	memcpy(&entry->pdelay_req_egress, ts, sizeof(*ts));
++
++	pthread_mutex_lock(&pdelay_entry_validity_mutex);
++	entry->validity |= PDELAY_REQ_EGRESS_VALID;
++	pthread_mutex_unlock(&pdelay_entry_validity_mutex);
++			
++	if (entry->validity == ALL_VALID)
++	    commit_pdelay(entry);
++			
++	break;
++    }
++		
++    case PdelayRespEvent: {
++	ptp_hdr *pdelay_resp_msg = (ptp_hdr *)extract_entry->aux_data;
++		
++	/* send PDelayRespFollowup to the previous PDELAY RESP */
++	ptp_msg pdelay_resp_followup_msg;
++			
++	memcpy(&pdelay_resp_followup_msg, pdelay_resp_msg, sizeof(*pdelay_resp_msg));
++	pdelay_resp_followup_msg.hdr.type = PdelayRespFollowUpGeneral;
++	memcpy(&pdelay_resp_followup_msg.timestamp, ts, sizeof(*ts));
++	// NOTE: for now, omit request_port_id
++		
++	debug_printf("[PTP] Sending PDELAY RESP FOLLOWUP on interface = %s\n", 
++		     extract_entry->interface);
++	
++	ptp_pending_event_packet *buffered = 
++	  ptp_send_packet(sr, (ptp_hdr *)&pdelay_resp_followup_msg, 
++			  COUNTER_PTP_ETHER_ADDR, extract_entry->interface);
++	assert(!buffered);
++	
++	break;
++    }
++
++    default: 
++	assert(0 && "invalid type in ptp_extract_egress_thread");
++    }
++    
++    /*** now that an egress timestamp has been extracted, a previous buffered packet
++         might need to get sent. do this here */
++    pthread_mutex_lock(&ptp_interfaces_mutex);
++    
++    /* dequeue and send a buffered packet, if one exists */
++    ptp_interface_entry *iface_entry = get_interface_entry(extract_entry->interface);
++
++    if (iface_entry->pending_event_packets) {
++      /* remove the pending packet */
++      ptp_pending_event_packet *packet = iface_entry->pending_event_packets;
++      list_remove(iface_entry->pending_event_packets, packet, next, prev);
++
++      /* resend the packet */
++      send_packet(sr, packet->frame, packet->len, packet->interface); 
++
++      /* since it's an event, we also have to capture the egress timestamp... */
++      read_egress_timestamp(packet->interface, packet->type, packet->aux_data);
++
++      free(packet->frame);
++      free(packet);
++    }
++
++    pthread_mutex_unlock(&ptp_interfaces_mutex);
++}
++
++/* thread responsible for reading egress timestamps and processing them */
++static void *ptp_extract_egress_thread(void *r)
++{	
++    struct sr_instance *sr = (struct sr_instance *)r;
++    assert(sr);
++
++    pthread_mutex_lock(&ptp_extract_egress_mutex);
++
++    while (1) {	
++	/* 
++	 *  wait for work.... 
++	 */
++	if (ptp_extract_egress_entries != NULL) {
++	    /* if there are entries we're waiting on, wait for more AND for some time to pass to retry reading */
++	    pthread_cond_timedwait(&ptp_extract_egress_nonempty_cond, &ptp_extract_egress_mutex, &COUNTER_PTP_EXTRACT_EGRESS_INT);
++	} else {
++	    /* if there are no entries, sleep until another thread enqueues more */
++	    pthread_cond_wait(&ptp_extract_egress_nonempty_cond, &ptp_extract_egress_mutex);
++	}
++
++	ptp_timestamp ts;
++		
++	ptp_extract_egress_entry *walker = ptp_extract_egress_entries;
++	while (walker) {
++	    assert(walker->interface);
++
++	    /* attempt to read the transmit timestamp for the given interface */
++	    unsigned valid = or_ptp_get_egress_timestamp(get_router_state(sr), walker->interface, &ts);
++		
++	    if (valid) {
++		/* if it's valid, process it */
++		process_valid_egress_timestamp(sr, walker, &ts);
++			
++		ptp_extract_egress_entry *walker_next = walker->next;	
++		list_remove(ptp_extract_egress_entries, walker, next, prev);
++		free(walker);
++				
++		walker = walker_next;
++	    } else {
++		/* bump the read_attempt_count */
++		walker->read_attempt_count++;
++				
++		/* time out entries that have been retried too much */
++		if (walker->read_attempt_count > MAX_EGRESS_EXTRACT_COUNT) {
++		    debug_printf("[PTP] Read attempt count exceeded for PTP TX on interface = %s\n",
++				 walker->interface);
++
++		    ptp_extract_egress_entry *walker_next = walker->next;	
++		    list_remove(ptp_extract_egress_entries, walker, next, prev);
++		    free(walker);
++					
++		    walker = walker_next;
++		} else {
++		    walker = walker->next;
++		}
++	    }
++	}	
++    }
++}
++
++static void 
++read_egress_timestamp(const char *interface, ptp_message_type type, void *aux_data)
++{
++    assert(interface);
++
++    /* create new entry */
++    ptp_extract_egress_entry *entry = calloc(1, sizeof(*entry));
++	
++    entry->interface = strdup(interface);
++    entry->type = type;
++    entry->aux_data = aux_data;
++	
++    debug_printf("[PTP] Enqueueing an extract_egress entry of type = %u on interface = %s\n",
++		 type, interface);
++	
++    /* enqueue entry */
++    pthread_mutex_lock(&ptp_extract_egress_mutex);
++	
++    list_insert_front(ptp_extract_egress_entries, entry, next, prev);
++
++    ptp_extract_egress_entry *walker = ptp_extract_egress_entries;
++    for (; walker; walker = walker->next) {
++	debug_printf("[PTP] ptp_extract_egress_entry: interface = %s, type = %u\n", 
++		     walker->interface, walker->type);		
++    }
++
++    /* singal the extract_egress processing thread */
++    pthread_cond_broadcast(&ptp_extract_egress_nonempty_cond);
++
++    pthread_mutex_unlock(&ptp_extract_egress_mutex);
++}
++
++static int new_sequence_id(void)
++{
++    static int s = 0;
++    return s++;
++}
++
++static ptp_msg *new_ptp_msg(ptp_message_type type, uint32_t sequence_id)
++{
++    ptp_msg *new_msg = calloc(1, sizeof(*new_msg));
++
++    new_msg->hdr.version = COUNTER_PTP_VERSION;
++    new_msg->hdr.len = sizeof(*new_msg);
++    new_msg->hdr.type = type;
++    new_msg->hdr.sequence_id = sequence_id;
++
++    return new_msg;
++}
++
++/* returns NULL if the packet is sent, or a pending_event entry if it's buffered */
++ptp_pending_event_packet *
++ptp_send_packet(struct sr_instance *sr, ptp_hdr *ptp_hdr,
++                const uint8_t dest_addr[ETH_ADDR_LEN], const char *interface)
++{
++    struct router_state *rs = get_router_state(sr);
++    uint16_t len = ptp_hdr->len;
++
++    lock_if_list_rd(rs);
++
++    /* construct ethernet frame */
++    uint16_t total_len = sizeof(eth_hdr) + len;
++    uint8_t *frame= (uint8_t *)calloc(total_len, sizeof(*frame));
++
++    /* grab the interface struct for the outgoing interface so we have its MAC address */
++    iface_entry* iface_struct = get_iface(rs, interface);
++
++    /* populate the packet with the ethernet information we have */
++    populate_eth_hdr((struct eth_hdr *)frame, (uint8_t *)dest_addr, iface_struct->addr, ETH_TYPE_PTP);
++
++    /* copy in PTP packet data */
++    ptp_hton(ptp_hdr);
++    memcpy(frame + sizeof(eth_hdr), ptp_hdr, sizeof(*ptp_hdr)); 
++
++    switch(ptp_hdr->type) {
++    case SyncEvent:
++    case DelayReqEvent:
++    case PdelayReqEvent:
++	/* no extra data, so do nothing */
++	break;
++		
++    case DelayRespGeneral:
++    case PdelayRespEvent:
++    case FollowUpGeneral:
++    case PdelayRespFollowUpGeneral: {
++	/* has timestamp and request_port_id, which need to be converted
++	 * to network byte order */
++	ptp_msg *outgoing_msg = (ptp_msg *)(frame + sizeof(eth_hdr));
++	ptp_timestamp ts;
++	memcpy(&ts, &((ptp_msg *)ptp_hdr)->timestamp, sizeof(ts));
++			
++	ptp_timestamp_hton(&ts);
++	memcpy(&outgoing_msg->timestamp, &ts, sizeof(ts));
++
++	// NOTE: for now, omit request_port_id
++	break;
++    }
++    }
++
++    ptp_ntoh(ptp_hdr);
++
++    debug_printf("[PTP] Sending PTP packet w/ ptp len = %d\n", ptp_hdr->len); 
++
++    unsigned failed = 0;
++    ptp_pending_event_packet *result;
++
++    /* need this lock to make sure that the buffering happens correctly */
++    /* lock the egress mutex FIRST to preserve ordering */
++    pthread_mutex_lock(&ptp_extract_egress_mutex);
++    pthread_mutex_lock(&ptp_interfaces_mutex);
++
++    /* send the packet */
++    if (is_ptp_event(ptp_hdr->type) && pending_events_on_interface(interface)) {
++	/* if this is an event (i.e., we have to get its egress timestamp),
++	   and there's another event waiting to read its egress timestamp,
++	   bufer the packet. this limitation exists because we can only have
++	   one outstanding at once. */
++	result = buffer_event_packet(sr, frame, total_len, interface);
++    } else {
++	/* otherwise, just send the packet */
++    	failed = send_packet(sr, frame, total_len, interface);
++    	free(frame);
++	
++	result = NULL;
++    }
++
++    pthread_mutex_unlock(&ptp_interfaces_mutex);
++    pthread_mutex_unlock(&ptp_extract_egress_mutex);
++
++    unlock_if_list(rs);
++
++    if (failed)
++	debug_printf("[PTP] Sending PTP packet failed\n");
++
++    return result;
++}
++
++static ptp_pending_event_packet *
++buffer_event_packet(struct sr_instance *sr, uint8_t *frame, unsigned len, const char *interface)
++{
++    debug_printf("[PTP] Buffering outgoing event packet on iface=%s\n", interface);
++
++    ptp_interface_entry *entry = get_interface_entry(interface);
++    assert(entry);
++
++    ptp_pending_event_packet *packet = calloc(1, sizeof(*packet));
++    packet->frame = frame;
++    packet->len = len;
++    packet->interface = interface;
++    
++    ptp_pending_event_packet *iter;
++    list_insert_back(entry->pending_event_packets, iter, packet, next, prev);
++
++    return packet;
++}
++
++static void
++send_sync_msg(struct sr_instance *sr, const char *interface)
++{
++    debug_printf("[PTP] send_sync_msg\n");
++
++    int sequence_id = new_sequence_id();
++    ptp_msg *sync_msg = new_ptp_msg(SyncEvent, sequence_id);
++
++    /* SYNC and PDELAY_REQ messages need TWO_STEP flag set */
++    sync_msg->hdr.flags[0] |= TWO_STEP_CLOCK_FLAG;
++
++    ptp_pending_event_packet *buffered = 
++      ptp_send_packet(sr, (ptp_hdr *)sync_msg, COUNTER_PTP_ETHER_ADDR, interface);
++
++    /* read the SYNC egress timestamp asynchronously (and send followup) */
++    if (!buffered) {
++      read_egress_timestamp(interface, SyncEvent, sync_msg);
++    } else {
++      buffered->type = SyncEvent;
++      buffered->aux_data = sync_msg;
++    }
++
++    debug_printf("[PTP] send_sync_msg DONE\n");
++}
++
++static void
++send_pdelay_req_msg(struct sr_instance *sr, const char *interface)
++{
++    debug_printf("[PTP] send_pdelay_req_msg\n");
++
++    /* create a new sync entry, as we'll be waiting on a DELAY_RESP */
++    ptp_pdelay_entry *entry = calloc(1, sizeof(*entry));
++
++    entry->interface = interface;
++    entry->pdelay_req_sequence_id = new_sequence_id();
++
++    list_insert_front(pending_pdelays, entry, next, prev);
++
++    /* send the pdelay_req on the given interface */
++    ptp_msg *pdelay_req_msg = new_ptp_msg(PdelayReqEvent, entry->pdelay_req_sequence_id);
++
++    /* SYNC and PDELAY_REQ messages need TWO_STEP flag set */
++    pdelay_req_msg->hdr.flags[0] |= TWO_STEP_CLOCK_FLAG;
++
++    ptp_pending_event_packet *buffered = 
++      ptp_send_packet(sr, (ptp_hdr *)pdelay_req_msg, COUNTER_PTP_ETHER_ADDR, interface);
++
++    /* read the PDELAY REQ egress timestamp asynchronously */
++    if (!buffered) {
++      read_egress_timestamp(interface, PdelayReqEvent, (void *)entry);
++    } else {
++      buffered->type = PdelayReqEvent;
++      buffered->aux_data = entry;
++    }
++
++    free(pdelay_req_msg);
++
++    debug_printf("[PTP] send_pdelay_req_msg DONE\n");
++}
++
++static void read_interface_states(struct sr_instance *sr)
++{
++    /* the sr_instance only holds 32 chars of the path to the ptpconf file so we have 
++     * to pass it in as a relative path to the working directory, which requires 
++     * us to get the working directory, do some string manipulation, and append
++     * the relative path to the end of the working directory */
++    char path[256];
++    bzero(path, 256);
++    getcwd(path, 256);
++	
++    int len = strlen(path);
++    path[len] = '/';
++    strcpy(path+len+1, sr->ptpconf);
++    FILE* file = fopen(path, "r");
++	
++    if (file == NULL) {
++	fprintf(stderr, "[PTP] Conf file %s not found. All interfaces will be PASSIVE.\n", path);
++	return;
++    }
++
++    char buf[1024];
++    char *interface;
++    char *state_str;
++    bzero(buf, 1024);
++
++    /* walk through the ptp.conf file one line at a time
++     * 
++     * Format is one or more lines of the form:
++     *	 [interface] [master|slave|passive]
++     *
++     * Lines starting with '#' are ignored.	
++     */
++    while (fgets(buf, 1024, file) != NULL) {
++	/* lines starting with '#' and empty lines are skipped */
++	if (buf[0] == '#' || strlen(buf) <= 2)
++	    continue;
++			
++	if (sscanf(buf, "%as %as", &interface, &state_str) != 2) {
++	    fprintf(stderr, "[PTP] Failure reading from ptp conf file %s\n", path);
++	    fprintf(stderr, "[PTP] Malformed line: \"%s\"\n", buf);
++	    return;
++	}
++
++	IFPTPState state;
++
++	if (!strcasecmp(state_str, "master")) {
++	    state = IFPTPState_MASTER;
++	} else if (!strcasecmp(state_str, "slave")) {
++	    state = IFPTPState_SLAVE;
++	} else if (!strcasecmp(state_str, "passive")) {
++	    state = IFPTPState_PASSIVE;
++	} else {
++	    fprintf(stderr, "[PTP] Invalid PTP interface state: %s\n", state_str);
++	}
++	
++	/* find the corresponding interface entry and update the state */
++	ptp_interface_entry *walker;
++	unsigned found = 0;
++
++	for (walker = ptp_interfaces; walker; walker = walker->next) {
++	    if (!strcasecmp(walker->interface, interface)) {
++		walker->state = state;
++		found = 1;
++		debug_printf("[PTP] Setting %s state to %u\n", interface, state);
++		break;
++	    }
++	}
++		
++	if (!found) {
++	    fprintf(stderr, "[PTP] Unknow interface: %s\n", interface);
++	}
++    }
++}
++
++
++int or_ptp_init(struct sr_instance *sr)
++{
++    int ret = 0;
++
++    assert(sr);
++    struct router_state *rs = get_router_state(sr);
++
++    fprintf(stderr, "[PTP] Intializing PTP subsystem\n");
++
++    /* create recursive mutex attr */
++    pthread_mutexattr_t recursive_attr;
++    pthread_mutexattr_init(&recursive_attr);    
++    pthread_mutexattr_settype(&recursive_attr, PTHREAD_MUTEX_RECURSIVE);
++    pthread_mutexattr_destroy(&recursive_attr);	
++
++    /* create the mutex and cond var protecting the egress extract list */
++    ret = pthread_mutex_init(&ptp_extract_egress_mutex, &recursive_attr);
++
++    assert(!ret);
++    if(ret) {
++	return 0;
++    }
++
++    ret = pthread_cond_init(&ptp_extract_egress_nonempty_cond, NULL);
++
++    assert(!ret);
++    if(ret) {
++	return 0;
++    }
++
++    /* create the mutexes protecting validity of sync/pdelay entries */
++    /* this is required because two threads read these entries */
++    ret = pthread_mutex_init(&sync_entry_validity_mutex, NULL);
++
++    assert(!ret);
++    if(ret) {
++	return 0;
++    }
++
++    ret = pthread_mutex_init(&pdelay_entry_validity_mutex, NULL);
++
++    assert(!ret);
++    if(ret) {
++	return 0;
++    }
++
++
++    /*** setup the ptp_interface list ***/
++	
++    /* lock the router's if_list */
++    lock_if_list_rd(rs);
++	
++    node* cur = rs->if_list;
++    while (cur) {
++	iface_entry* iface = (iface_entry*)cur->data;
++		
++	ptp_interface_entry *new_entry = calloc(1, sizeof(*new_entry));
++	new_entry->interface = iface->name;
++	/* all interfaces default to PASSIVE */
++	new_entry->state = IFPTPState_PASSIVE;
++		
++	list_insert_front(ptp_interfaces, new_entry, next, prev);
++		
++	cur = cur->next;
++    }
++
++    /* unlock the router's if_list */
++    unlock_if_list(rs);
++
++    /* create the mutex to protect this list */
++    ret = pthread_mutex_init(&ptp_interfaces_mutex, &recursive_attr);
++	
++    assert(!ret);
++    if(ret) {
++	return 0;
++    }
++
++
++    /*** create the message-sending thread ***/
++    pthread_t msg_thread;
++   
++    ret = pthread_create(&msg_thread, NULL, ptp_msg_thread, sr);
++    assert(!ret);
++    if(ret) {
++	return 0;
++    }
++
++    /*** create the egress timestamp extraction thread ***/
++    pthread_t egress_extract_thread;
++   
++    ret = pthread_create(&egress_extract_thread, NULL, ptp_extract_egress_thread, sr);
++    assert(!ret);
++    if(ret) {
++	return 0;
++    }
++
++    /*** read PTP interface states from file ***/
++    read_interface_states(sr);
++
++    /*** open files for dumping SYNC and PDELAY information */
++    sync_log_fd = fopen(sync_log_filename, "w");
++    if (!sync_log_fd)
++	fprintf(stderr, "[PTP] Warning: couldn't open SYNC log file.");	
++
++    pdelay_log_fd = fopen(pdelay_log_filename, "w");
++    if (!pdelay_log_fd)
++	fprintf(stderr, "[PTP] Warning: couldn't open PDELAY log file.");	
++
++    return ret;
++}
++
++
++/* clean up the PTP subsystem */	
++void or_ptp_destroy()
++{
++    pthread_mutex_destroy(&ptp_extract_egress_mutex);
++    pthread_cond_destroy(&ptp_extract_egress_nonempty_cond);
++
++    pthread_mutex_destroy(&pdelay_entry_validity_mutex);
++    pthread_mutex_destroy(&sync_entry_validity_mutex);
++    pthread_mutex_destroy(&ptp_interfaces_mutex);
++}
++
++
++static void
++handle_sync_event(struct sr_instance *sr, ptp_hdr *hdr, const char *interface)
++{
++    ptp_msg *sync_msg = (ptp_msg *)hdr;
++    
++    debug_printf("[PTP] Received a PTP SYNC with seq=%d on iface=%s\n", 
++		 sync_msg->hdr.sequence_id, interface);
++    
++    if (get_interface_state(interface) != IFPTPState_SLAVE) {
++	debug_printf("[PTP] DROPPING PTP PACKET: SyncEvent on non-SLAVE interface\n");
++	return;
++    }
++    
++    /* create a new sync entry, as we'll be waiting on a DELAY_RESP */
++    ptp_sync_entry *entry = calloc(1, sizeof(*entry));
++    assert(entry);
++    
++    entry->interface = interface;
++    entry->sync_sequence_id = sync_msg->hdr.sequence_id;
++    entry->delay_req_sequence_id = new_sequence_id();
++   
++    /* read SYNC ingress from HW */ 
++    unsigned success = or_ptp_get_ingress_timestamp(get_router_state(sr), interface, &entry->sync_ingress);
++    assert(success && "timestamp which MUST be present isn't");
++
++    pthread_mutex_lock(&sync_entry_validity_mutex);
++    entry->validity |= SYNC_INGRESS_VALID;
++    pthread_mutex_unlock(&sync_entry_validity_mutex);
++
++    /* store this SYNC event as a pending */
++    list_insert_front(pending_syncs, entry, next, prev);
++    
++    /* send back a delay_req on the same interface */
++    ptp_msg *delay_req_msg = new_ptp_msg(DelayReqEvent, entry->delay_req_sequence_id);
++
++    ptp_pending_event_packet *buffered = 
++      ptp_send_packet(sr, (ptp_hdr *)delay_req_msg, COUNTER_PTP_ETHER_ADDR, interface);
++
++    if (!buffered) {
++      /* read the DELAY REQ egress timestamp asynchronously */
++      read_egress_timestamp(interface, DelayReqEvent, (void *)entry);
++    } else {
++      buffered->type = DelayReqEvent;
++      buffered->aux_data = entry;
++    }
++
++    free(delay_req_msg);
++}
++
++
++static void
++handle_delay_req_event(struct sr_instance *sr, ptp_hdr *hdr,
++                       const char *interface)
++{
++    ptp_msg *delay_req_msg = (ptp_msg *)hdr;
++    
++    debug_printf("[PTP] Received a PTP DELAY REQ with seq=%d on iface=%s\n", 
++		 delay_req_msg->hdr.sequence_id, interface);
++    
++    if (get_interface_state(interface) != IFPTPState_MASTER) {
++	debug_printf("[PTP] DROPPING PTP PACKET: DelayReqEvent on non-MASTER interface\n");
++	return;
++    }
++
++    ptp_msg delay_resp_msg;
++    
++    /* read DELAY REQ ingress from HW directly into the DELAY RESP message */ 
++    unsigned success = or_ptp_get_ingress_timestamp(get_router_state(sr), interface, &delay_resp_msg.timestamp);
++    assert(success && "timestamp which MUST be present isn't");
++	
++    /* send back the DELAY REQ ingress in a DELAY RESP */
++    memcpy(&delay_resp_msg, delay_req_msg, sizeof(ptp_hdr));
++    delay_resp_msg.hdr.type = DelayRespGeneral;
++	
++    ptp_pending_event_packet *buffered = 
++      ptp_send_packet(sr, (ptp_hdr *)&delay_resp_msg, COUNTER_PTP_ETHER_ADDR, interface);
++    assert(!buffered);
++}
++
++
++static void
++handle_followup_general(struct sr_instance *sr, ptp_hdr *hdr, const char *interface)
++{
++    ptp_msg *followup_msg = (ptp_msg *)hdr;
++    
++    debug_printf("[PTP] Received a PTP FOLLOWUP with seq=%d on iface=%s\n", 
++		 followup_msg->hdr.sequence_id, interface);
++    
++    /* find matching ptp_sync_entry */
++    ptp_sync_entry *entry;
++    for (entry = pending_syncs; entry; entry = entry->next) {
++	if (entry->sync_sequence_id == followup_msg->hdr.sequence_id) {
++	    break;
++	}
++    }
++    
++    if (!entry) {
++	debug_printf("[PTP] No matching SYNC found. Dropping FOLLOWUP!\n");
++	return;
++    }
++
++    /* extract the SYNC timestamp from the followup */
++    ptp_timestamp_ntoh(&followup_msg->timestamp);
++    memcpy(&entry->sync_egress, &followup_msg->timestamp, sizeof(entry->sync_egress));
++
++    /* the SYNC egress is now valid */
++    pthread_mutex_lock(&sync_entry_validity_mutex);
++    entry->validity |= SYNC_EGRESS_VALID;
++    pthread_mutex_unlock(&sync_entry_validity_mutex);    
++
++    if (entry->validity == ALL_VALID)
++	commit_sync(sr, entry);
++}
++
++
++static void
++handle_pdelay_req_event(struct sr_instance *sr, ptp_hdr *hdr,
++			const char *interface)
++{
++    ptp_msg *pdelay_req_msg = (ptp_msg *)hdr;
++    
++    debug_printf("[PTP] Received a PTP PDELAY REQ with seq=%d on iface=%s\n", 
++		 pdelay_req_msg->hdr.sequence_id, interface);
++    
++    ptp_msg *pdelay_resp_msg = calloc(1, sizeof(*pdelay_resp_msg));
++
++    /* read PDELAY REQ ingress from HW directly into the PDELAY RESP message */ 
++    unsigned success = or_ptp_get_ingress_timestamp(get_router_state(sr), interface, &pdelay_resp_msg->timestamp);
++    assert(success && "timestamp which MUST be present isn't");
++
++    /* send back the PDELAY REQ ingress in a PDELAY RESP */
++    memcpy(pdelay_resp_msg, pdelay_req_msg, sizeof(ptp_hdr));
++    pdelay_resp_msg->hdr.type = PdelayRespEvent;
++
++    ptp_pending_event_packet *buffered = 
++      ptp_send_packet(sr, (ptp_hdr *)pdelay_resp_msg, COUNTER_PTP_ETHER_ADDR, interface);
++    
++    if (!buffered) {
++      /* read the PDELAY RESP egress timestamp asynchronously (and send followup) */
++      read_egress_timestamp(interface, PdelayRespEvent, pdelay_resp_msg);
++    } else {
++      buffered->type = PdelayRespEvent;
++      buffered->aux_data = pdelay_resp_msg;
++    }
++}
++
++
++static void
++handle_delay_resp_general(struct sr_instance *sr, ptp_hdr *hdr,
++			  const char *interface)
++{
++    ptp_msg *delay_resp_msg = (ptp_msg *)hdr;
++    
++    debug_printf("[PTP] Received a PTP DELAY RESP with seq=%d on iface=%s\n", 
++		 delay_resp_msg->hdr.sequence_id, interface);
++    
++    if (get_interface_state(interface) != IFPTPState_SLAVE) {
++	debug_printf("[PTP] DROPPING PTP PACKET: DelayResp on non-SLAVE interface\n");
++	return;
++    }
++    
++    /* find matching sync_etry */
++    ptp_sync_entry *entry;
++    for (entry = pending_syncs; entry; entry = entry->next) {
++	if (entry->delay_req_sequence_id == delay_resp_msg->hdr.sequence_id) {
++	    break;
++	}
++    }
++    
++    if (!entry) {
++	debug_printf("[PTP] No matching DELAY REQ found. Dropping DELAY RESP!\n");
++	return;
++    }
++  
++    ptp_timestamp_ntoh(&delay_resp_msg->timestamp); 
++    memcpy(&entry->delay_req_ingress, &delay_resp_msg->timestamp, sizeof(entry->delay_req_ingress));
++
++    pthread_mutex_lock(&sync_entry_validity_mutex);
++    entry->validity |= DELAY_REQ_INGRESS_VALID;
++    pthread_mutex_unlock(&sync_entry_validity_mutex);
++    
++    if (entry->validity == ALL_VALID)
++	commit_sync(sr, entry);
++}
++
++
++static void
++handle_pdelay_resp_event(struct sr_instance *sr, ptp_hdr *hdr,
++                         const char *interface)
++{
++    ptp_msg *pdelay_resp_msg = (ptp_msg *)hdr;
++    
++    debug_printf("[PTP] Received a PTP PDELAY RESP with seq=%d on iface=%s\n", 
++		 pdelay_resp_msg->hdr.sequence_id, interface);
++    
++    /* find matching ptp_pdelay_entry */
++    ptp_pdelay_entry *entry;
++    for (entry = pending_pdelays; entry; entry = entry->next) {
++	if (entry->pdelay_req_sequence_id == pdelay_resp_msg->hdr.sequence_id) {
++	    break;
++	}
++    }
++    
++    if (!entry) {
++	debug_printf("[PTP] No matching PDELAY REQ found. Dropping PDELAY RESP!\n");
++	return;
++    }
++    
++    /* read PDELAY RESP ingress from HW */ 
++    unsigned success = or_ptp_get_ingress_timestamp(get_router_state(sr), interface, &entry->pdelay_resp_ingress);
++    assert(success && "timestamp which MUST be present isn't");
++	
++    /* the PDELAY RESP ingress is now valid  */
++    pthread_mutex_lock(&pdelay_entry_validity_mutex);
++    entry->validity |= PDELAY_RESP_INGRESS_VALID;
++    pthread_mutex_unlock(&pdelay_entry_validity_mutex);
++
++    /* read the original PDELAY REQ ingress from the PDELAY RESP (which contains it) */
++    ptp_timestamp_ntoh(&pdelay_resp_msg->timestamp);
++    memcpy(&entry->pdelay_req_ingress, &pdelay_resp_msg->timestamp, sizeof(pdelay_resp_msg->timestamp));
++
++    /* the PDELAY REQ ingress is now valid  */
++    pthread_mutex_lock(&pdelay_entry_validity_mutex);
++    entry->validity |= PDELAY_REQ_INGRESS_VALID;
++    pthread_mutex_unlock(&pdelay_entry_validity_mutex);
++
++    if (entry->validity == ALL_VALID)
++	commit_pdelay(entry);
++}
++
++
++static void
++handle_pdelay_resp_followup_general(struct sr_instance *sr, ptp_hdr *hdr,
++                                    const char *interface)
++{
++    ptp_msg *pdelay_followup_msg = (ptp_msg *)hdr;
++    
++    debug_printf("[PTP] Received a PTP PDELAY RESP FOLLOWUP with seq=%d on iface=%s\n", 
++		 pdelay_followup_msg->hdr.sequence_id, interface);
++    
++    /* find matching ptp_pdelay_entry */
++    ptp_pdelay_entry *entry;
++    for (entry = pending_pdelays; entry; entry = entry->next) {
++	if (entry->pdelay_req_sequence_id == pdelay_followup_msg->hdr.sequence_id) {
++	    break;
++	}
++    }
++    
++    if (!entry) {
++	debug_printf("[PTP] No matching PDELAY REQ found. Dropping PDELAY RESP FOLLOWUP!\n");
++	return;
++    }
++
++    /* extract the PDELAY RESP timestamp from the followup */
++    ptp_timestamp_ntoh(&pdelay_followup_msg->timestamp);
++    memcpy(&entry->pdelay_resp_egress, &pdelay_followup_msg->timestamp, sizeof(entry->pdelay_resp_egress));
++
++    /* the PDELAY RESP egress is now valid */
++    pthread_mutex_lock(&pdelay_entry_validity_mutex);
++    entry->validity |= PDELAY_RESP_EGRESS_VALID;
++    pthread_mutex_unlock(&pdelay_entry_validity_mutex);
++    
++    if (entry->validity == ALL_VALID)
++	commit_pdelay(entry);
++}
++
++
++void or_ptp_process_packet(struct sr_instance *sr, const uint8_t *packet,
++                           unsigned int len, const char *interface)
++{
++    debug_printf("[PTP] HANDLING PTP PACKET from iface = %s\n", interface);
++
++    assert(sr && packet && interface);
++
++    if(len < sizeof(ptp_hdr)) {
++	debug_printf("[PTP] DROPPING PACKET: invalid length = %i\n", len);
++	return; 
++    }
++
++    eth_hdr *eth = (eth_hdr *)packet;
++    ptp_hdr *ptp = (ptp_hdr *)(eth + 1);
++    
++    /* sanity-check PTP packet */
++    ptp_ntoh(ptp);
++ 
++    if (len < ptp->len) {
++	debug_printf("[PTP] DROPPING PACKET: invalid length = %i and ptp->len = %d\n",
++		     len, ptp->len);
++	ptp_hton(ptp);
++	return; 
++    }
++
++    if (ptp->version != COUNTER_PTP_VERSION) {
++	debug_printf("[PTP] DROPPING PTP PACKET: wrong PTP version = %c\n", ptp->version);
++	ptp_hton(ptp);
++	return; 
++    }
++
++    /* NOTE: should probably verify MAC addresses of incoming packets, 
++     *       but don't so to be lenient in what we accept. */
++
++    switch (ptp->type) {
++    case SyncEvent:
++	handle_sync_event(sr, ptp, interface);
++	break;
++
++    case DelayReqEvent:                
++	handle_delay_req_event(sr, ptp, interface);
++	break;
++
++    case DelayRespGeneral:
++	handle_delay_resp_general(sr, ptp, interface);
++	break;
++
++    case FollowUpGeneral:
++	handle_followup_general(sr, ptp, interface);
++	break;
++		
++    case PdelayReqEvent:
++	handle_pdelay_req_event(sr, ptp, interface);
++	break;
++            
++    case PdelayRespEvent:
++	handle_pdelay_resp_event(sr, ptp, interface);
++	break;
++
++    case PdelayRespFollowUpGeneral:
++	handle_pdelay_resp_followup_general(sr, ptp, interface);
++	break;
++            
++    default:
++	debug_printf("[PTP] DROPPING PTP PACKET: unknown message type\n");
++	break;
++    }
++    
++    ptp_hton(ptp);
++
++    debug_printf("[PTP] HANDLING PTP PACKET DONE\n");
++    
++    return;
++}
++
++static void log_sync(ptp_sync_entry *entry)
++{
++    /* log to file */
++    if (sync_log_fd) {
++	char log_line[1024];
++        sprintf(log_line, "on %s, sync link delay seconds = %u, nanoseconds = %u, " \
++                                  "sync clock offset seconds = %d, nanoseconds = %d\n", 
++		entry->interface, entry->link_delay.seconds, entry->link_delay.nanoseconds,
++				entry->clock_offset.seconds, entry->clock_offset.nanoseconds);
++	fputs(log_line, sync_log_fd);
++	fflush(sync_log_fd);
++    }
++}
++
++/* called once all necessary timestamps for SYNC have been assembled */
++static void commit_sync(struct sr_instance *sr, ptp_sync_entry *entry)
++{
++    calculate_offsets(entry);
++   
++    /* move the entry from the pending to the completed list */
++    list_remove(pending_syncs, entry, next, prev);
++    list_insert_front(completed_syncs, entry, next, prev);
++   
++    /* synchronize clock */
++    update_hardware_clock(sr, entry);	
++
++	log_sync(entry);
++}
++
++
++static void log_pdelay(ptp_pdelay_entry *entry)
++{
++    /* log to file */
++    if (pdelay_log_fd) {
++	char log_line[1024];
++        sprintf(log_line, "on %s, pdelay seconds = %u, nanoseconds = %u\n", 
++		entry->interface, entry->link_delay.seconds, entry->link_delay.nanoseconds);
++	fputs(log_line, pdelay_log_fd);
++	fflush(pdelay_log_fd);
++    }
++}
++
++/* called once all necessary timestamps for PDELAY have been assembled */
++static void commit_pdelay(ptp_pdelay_entry *entry)
++{
++    debug_printf("[PDELAY COMMIT] req_egress sec = %d, nsec = %d\n",
++		 entry->pdelay_req_egress.seconds, 
++		 entry->pdelay_req_egress.nanoseconds);
++    debug_printf("[PDELAY COMMIT] req_ingress sec = %d, nsec = %d\n",
++		 entry->pdelay_req_ingress.seconds, 
++		 entry->pdelay_req_ingress.nanoseconds);
++    debug_printf("[PDELAY COMMIT] resp_egress sec = %d, nsec = %d\n",
++		 entry->pdelay_resp_egress.seconds, 
++		 entry->pdelay_resp_egress.nanoseconds);
++    debug_printf("[PDELAY COMMIT] resp_ingress sec = %d, nsec = %d\n",
++		 entry->pdelay_resp_ingress.seconds, 
++		 entry->pdelay_resp_ingress.nanoseconds);
++
++    ptp_timestamp req_diff, resp_diff;
++
++    ts_diff(&req_diff, &entry->pdelay_req_egress, &entry->pdelay_req_ingress);
++    ts_diff(&resp_diff, &entry->pdelay_resp_egress, &entry->pdelay_resp_ingress);
++
++    ts_avg(&entry->link_delay, &req_diff, &resp_diff);
++
++    log_pdelay(entry);
++
++    /* move the entry from the pending to the completed list */
++    list_remove(pending_pdelays, entry, next, prev);
++    list_insert_front(completed_pdelays, entry, next, prev);    
++}
++
++/* calculates the link_delay and time_offset given a sync_entry, populating the struct's fields */
++static void calculate_offsets(ptp_sync_entry *entry)
++{
++    assert(entry);
++
++    debug_printf("[SYNC COMMIT] sync_egress sec = %d, nsec = %d\n",
++		 entry->sync_egress.seconds, 
++		 entry->sync_egress.nanoseconds);
++    debug_printf("[SYNC COMMIT] sync_ingress sec = %d, nsec = %d\n",
++		 entry->sync_ingress.seconds, 
++		 entry->sync_ingress.nanoseconds);
++    debug_printf("[SYNC COMMIT] req_egress sec = %d, nsec = %d\n",
++		 entry->delay_req_egress.seconds, 
++		 entry->delay_req_egress.nanoseconds);
++    debug_printf("[SYNC COMMIT] req_ingress sec = %d, nsec = %d\n",
++		 entry->delay_req_ingress.seconds, 
++		 entry->delay_req_ingress.nanoseconds);
++
++    ptp_timestamp sync_diff, delay_req_diff;
++
++    ts_diff(&sync_diff, &entry->sync_egress, &entry->sync_ingress);
++    ts_diff(&delay_req_diff, &entry->delay_req_egress, &entry->delay_req_ingress);
++
++    debug_printf("[SYNC COMMIT] sync_diff sec = %d, nsec = %d\n",
++		 sync_diff.seconds, sync_diff.nanoseconds);
++    debug_printf("[SYNC COMMIT] delay_req_diff sec = %d, nsec = %d\n",
++		 delay_req_diff.seconds, delay_req_diff.nanoseconds);
++
++    ts_avg(&entry->link_delay, &sync_diff, &delay_req_diff);
++    ts_diff(&entry->clock_offset, &entry->link_delay, &sync_diff);
++    
++    debug_printf("[SYNC COMMIT] link_delay sec = %d, nsec = %d\n",
++		 entry->link_delay.seconds, entry->link_delay.nanoseconds);
++    debug_printf("[SYNC COMMIT] clock_offset sec = %d, nsec = %d\n",
++		 entry->clock_offset.seconds, entry->clock_offset.nanoseconds);
++}   
++
++#define Kp 0.000000005
++#define Ki 0.000000000000000002
++#define Kd 0.000001
++
++static void correct_for_skew(struct sr_instance *sr, ptp_sync_entry *entry)
++{
++    static int period = 0;
++    static double previous_error = 0;
++    static double I = 0;
++    if(period++ == 0) {
++      debug_printf("[PTP SKEW] Not adjusting clock skew: First iteration.\n");
++      return;
++    }
++
++    assert (entry);
++    assert (entry->next);
++
++    /* error between slave and master clocks */
++    double time_error = -entry->clock_offset.seconds * ((double)NANOSECONDS_PER_SECOND) 
++    	- entry->clock_offset.nanoseconds;
++    /* time of this sync */
++    double sync_time = entry->sync_egress.seconds * ((double)NANOSECONDS_PER_SECOND)
++	+ entry->sync_egress.nanoseconds;
++    /* time of previous sync */
++    double prev_sync_time = entry->next->sync_egress.seconds * ((double)NANOSECONDS_PER_SECOND)
++	+ entry->next->sync_egress.nanoseconds;
++    /* time since last sync according to master */
++    double time_since_last_sync = sync_time - prev_sync_time;
++    
++    if(time_since_last_sync == 0) {
++      debug_printf("[PTP SKEW] Not adjusting clock skew: Time since last sync=0\n");
++      return;
++    }
++    
++    double P = Kp * time_error;
++    I = I + Ki * time_error * time_since_last_sync;
++    if (I>10) I = 10;
++    else if (I<-10) I = -10;
++    double D = (Kd / time_since_last_sync) * (time_error - previous_error);
++    double new_clock_rate = P + D + I + 8.0;
++    
++    debug_printf("[PTP SKEW] time_error=%f, time_since_last_sync=%f, P=%f, D=%f, I=%f\n",
++		 time_error, time_since_last_sync, P, D, I);
++
++    debug_printf("[PTP SKEW] Writing new clock rate of %f\n", new_clock_rate);
++
++    or_ptp_adjust_clock_rate(get_router_state(sr), new_clock_rate);
++}
++
++static void update_hardware_clock(struct sr_instance *sr, ptp_sync_entry *entry)
++{
++    /* update clock with opposite of offset (to correct for offset) */
++    int seconds_delta = -1 * entry->clock_offset.seconds;
++    int nanoseconds_delta = -1 * entry->clock_offset.nanoseconds;
++
++    if (SKEW_CORRECTION_ENABLED) {
++      correct_for_skew(sr, entry);
++    }
++}
+diff -x .svn -u -N -r .//or_ptp_common.h /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_common.h
+--- .//or_ptp_common.h	1969-12-31 16:00:00.000000000 -0800
++++ /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_common.h	2009-12-02 18:18:29.000000000 -0800
+@@ -0,0 +1,120 @@
++/*-----------------------------------------------------------------------------
++ * File: or_ptp_common.h 
++ * Authors: Peter Pawlowski
++ *
++ * Description: Module implementing NetFPGA PTP time synchornization support
++ *
++ *---------------------------------------------------------------------------*/
++
++#ifndef OR_COUNTER_PTP_COMMON_H
++#define OR_COUNTER_PTP_COMMON_H
++
++#include <pthread.h>
++#include <stdint.h>
++
++#define COUNTER_PTP_VERSION 2
++#define ETH_TYPE_PTP 0x88f7
++
++/* represents the three PTP interface modes */
++typedef enum
++{
++    IFPTPState_MASTER,
++    IFPTPState_SLAVE,
++    IFPTPState_PASSIVE,
++} IFPTPState;
++
++typedef enum _ptp_message_type
++{
++    /* Note: Event messages are timestamped */
++    SyncEvent = 0,  
++    DelayReqEvent = 1,
++    PdelayReqEvent = 2,
++    PdelayRespEvent = 3,
++
++    /* Reserved: 4-7 */
++    
++    /* Note: General messages are NOT timestamped */
++    FollowUpGeneral = 8,
++    DelayRespGeneral = 9,
++    PdelayRespFollowUpGeneral = 10,
++
++    /* Announce, Signaling and Management messages are
++     * NOT handled by this implementation */
++    AnnounceGeneral = 11,
++    SignalingGeneral = 12,
++    ManagementGeneral = 13,
++    
++    /*	Reserved:  14-15 */
++} ptp_message_type;
++
++/* SYNC and PDELAY packets need TWO_STEP_CLOCK_FLAG in first byte */
++#define TWO_STEP_CLOCK_FLAG 2 
++
++typedef struct _ptp_hdr /* 34 bytes total */
++{
++    /* PTP message type */
++    /* NOTE: normally 4 bits, but upper 4 bits are
++     * "transport specific" (0 in case of ethernet)
++     */
++    uint8_t type;
++    
++    /* PTP version number. */
++    /* NOTE: version is lower 4 bits, but upper 4 are reserved */
++    uint8_t version;
++
++    /* total length of the PTP packet in bytes */
++    uint16_t len; 
++
++    uint8_t domain_number;  /* UNUSED */
++    
++    /* UNUSED */ uint8_t reserved;
++
++    /* various flags. */
++    uint8_t flags[2];
++
++    /* correction field, which is modified by transparent clocks. not used. */
++    uint32_t correction[2];  /* UNUSED */
++    
++    /* UNUSED */ uint32_t reserved_2;
++
++    /* port_identity of the origininating port */
++    uint8_t source_port_id[10];
++
++    /* sequence id of the originating packet */
++    uint16_t sequence_id;
++
++    /* used in version 1 of the standard. set in outgoing packets for backwards
++     * compatability, but unused by receivers. */
++    uint8_t control;
++
++    /* always 0x7f for our messages. see standard for more information. */
++    uint8_t log_mean_message_interval;
++} __attribute__ ((packed)) ptp_hdr;
++
++typedef struct _ptp_timestamp 
++{
++    uint16_t zero_seconds;  /* these bits will be zero until 2038 */
++    int32_t seconds;
++    int32_t nanoseconds;
++} __attribute__ ((packed)) ptp_timestamp;
++
++extern pthread_mutex_t ptp_mutex;
++extern uint32_t current_grand_master;
++
++struct sr_instance;
++
++/* needs to be called to initialize PTP subsystem */
++int or_ptp_init(struct sr_instance *sr);
++
++/* main entry point for a new PTP packet */
++void or_ptp_process_packet(struct sr_instance* sr,
++                           const uint8_t* packet,
++                           unsigned int len,
++                           const char* interface);
++
++/* debug printf for all PTP files */
++#define debug_printf printf
++
++#define NANOSECONDS_PER_SECOND (1000 * 1000 * 1000)
++
++#endif
+diff -x .svn -u -N -r .//or_ptp_hardware.c /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_hardware.c
+--- .//or_ptp_hardware.c	1969-12-31 16:00:00.000000000 -0800
++++ /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_hardware.c	2009-12-02 18:18:29.000000000 -0800
+@@ -0,0 +1,193 @@
++/*-----------------------------------------------------------------------------
++ * File: or_ptp_hardware.c
++ * Authors: Peter Pawlowski
++ *
++ * Description: Hardware abstraction layer for NetFPGA PTP implementation
++ *
++ *---------------------------------------------------------------------------*/
++
++#include "or_ptp_common.h"
++#include "or_ptp_hardware.h"
++#include "or_netfpga.h"
++#include "../../lib/C/reg_defines_ptp_router.h"
++
++#include "nf2/nf2util.h"
++
++#include <assert.h>
++#include <math.h>
++
++#define NANOSECONDS_PER_SECOND (1000 * 1000 * 1000)
++
++#define INTERFACE_0_MASK 1
++#define INTERFACE_1_MASK 2
++#define INTERFACE_2_MASK 4
++#define INTERFACE_3_MASK 8
++
++#define READ_TIMESTAMP(ID, TYPE)                                        \
++case ID:  {                                                             \
++    readReg(&router->netfpga, COUNTER_PTP_VALID_## TYPE ##_REG, &valid); \
++	debug_printf("[PTP] Reading timestamp, valid = %u\n", valid); \
++    if (!(valid & INTERFACE_## ID ##_MASK)) {                                                       \
++        debug_printf("[PTP] Timestamp NOT ready. Valid = %u\n", valid);                     \
++	return 0; \
++     } else {											\
++	unsigned hi, lo; \
++	/* read the timestamp */ 	                                 \
++        readReg(&router->netfpga, COUNTER_CLK_SYN_ ## ID ##_## TYPE ##_HI_REG, &hi); \
++        readReg(&router->netfpga, COUNTER_CLK_SYN_ ## ID ##_## TYPE ##_LO_REG, &lo); \
++        debug_printf("[PTP] Read timestamp %u,%u\n", hi, lo); \
++        convert_64_to_timestamp(&ts->seconds, &ts->nanoseconds, hi, lo);                                          \
++	/* reset the flag */                                            \
++        writeReg(&router->netfpga, COUNTER_PTP_MASK_## TYPE ##_REG, (~INTERFACE_## ID ##_MASK)); \
++        writeReg(&router->netfpga, COUNTER_PTP_ENABLE_MASK_## TYPE ##_REG, 1); \
++        writeReg(&router->netfpga, COUNTER_PTP_ENABLE_MASK_## TYPE ##_REG, 0); \
++        return 1;                                                       \
++     }                                                                       \
++}
++
++/* converts the 64-bit nanosecond timestamp maintained in hardware into seconds and nanoseconds */
++static void convert_64_to_timestamp(unsigned *out_seconds, unsigned *out_nanoseconds, 
++			 unsigned in_hi, unsigned in_lo)
++{
++	assert(out_seconds && out_nanoseconds);
++
++	/* construct the entire 64 bit timestamp */
++	uint64_t nanoseconds = ((uint64_t)in_hi << 32) + in_lo;
++
++	/* convert to seconds and nanoseconds */
++	*out_nanoseconds = nanoseconds % NANOSECONDS_PER_SECOND;
++	*out_seconds = nanoseconds / NANOSECONDS_PER_SECOND;
++}
++
++unsigned or_ptp_get_egress_timestamp(struct router_state *router,
++                                    const char *interface,
++                                    ptp_timestamp *ts)
++{
++  unsigned portNumber = getPortNumber((char *)interface);
++
++    unsigned valid;
++    
++    debug_printf("[PTP] Attempting to read TX timestamp for interface %s (%u)\n", 
++			interface, portNumber);
++    
++    switch(portNumber) {
++        READ_TIMESTAMP(0, TX)
++        READ_TIMESTAMP(1, TX)
++        READ_TIMESTAMP(2, TX)
++        READ_TIMESTAMP(3, TX)
++
++        default:
++            assert(0 && "invalid port number");
++    }
++}
++
++unsigned or_ptp_get_ingress_timestamp(struct router_state *router,
++                                     const char *interface,
++                                     ptp_timestamp *ts)
++{
++  unsigned portNumber = getPortNumber((char *)interface);
++
++    unsigned valid;
++    
++    debug_printf("[PTP] Attempting to read RX timestamp for interface %s\n", interface);
++   
++    switch(portNumber) {
++        READ_TIMESTAMP(0, RX)
++        READ_TIMESTAMP(1, RX)
++        READ_TIMESTAMP(2, RX)
++        READ_TIMESTAMP(3, RX)
++
++        default:
++            assert(0 && "invalid port number");
++    }
++}
++
++
++/* move the clock forwards/backwards by the given amount */
++void or_ptp_adjust_clock(struct router_state *router,
++                         int seconds,
++                         int nanoseconds)
++{
++	debug_printf("[PTP] Adjusting clock by s = %d, ns = %d\n", seconds, nanoseconds);
++
++	/* calculate net nanoseconds adjustment */
++	int64_t net_adjust = (int64_t)seconds * ((int64_t)NANOSECONDS_PER_SECOND) + nanoseconds; 
++
++	/* break into hi/lo registers */	
++	int32_t hi_adjust = (int64_t)net_adjust / ((int64_t)1 << 32);
++	int32_t lo_adjust = net_adjust - ((int64_t)hi_adjust) * ((int64_t)1 << 32);
++
++	debug_printf("[PTP] Writing %d into hi_adjust.\n", hi_adjust);
++	debug_printf("[PTP] Writing %d into lo_adjust.\n", lo_adjust);
++
++	unsigned s, ns;	
++
++	or_ptp_read_clock(router, &s, &ns);
++
++        /* write the hi/lo adjustment */
++	writeReg(&router->netfpga, COUNTER_1_REG, hi_adjust);
++	writeReg(&router->netfpga, COUNTER_2_REG, lo_adjust);
++
++	/* load the adjustment value */
++	writeReg(&router->netfpga, COUNTER_1_2_LOAD_REG, 1);
++	writeReg(&router->netfpga, COUNTER_1_2_LOAD_REG, 0);
++
++	or_ptp_read_clock(router, &s, &ns);
++}
++
++void or_ptp_adjust_clock_rate(struct router_state *router,
++                              double nanoseconds_per_tick)
++{
++	debug_printf("[PTP SKEW] Adjusting clock rate to ns = %.12f per clock\n", nanoseconds_per_tick);
++
++	/* NOTE: we only write offset from 8 ns */
++	double to_write = nanoseconds_per_tick - 8.0;
++	debug_printf("[PTP SKEW] Adjusting clock rate to write = %.12f per clock\n", to_write);
++
++	/* change into fixed size */
++	int64_t error = (int64_t)(to_write * pow(2.0, 32.0));
++	
++	int32_t nanoseconds = (int32_t)(error>>32);
++	/* Set fraction, be careful to maintain sign. If fractional part
++	 * uses 32 bits, then we could lose the sign bit. */
++	if(nanoseconds == 0xffffffff || nanoseconds == 0) {
++	  error >>= 1;
++	}
++	int32_t frac_nanoseconds = (int32_t)error;
++
++	debug_printf("[PTP SKEW] nanoseconds = %d per clock, frac = %d\n", nanoseconds, frac_nanoseconds);
++
++	/* write the seconds and nanoseconds adjustment */
++	writeReg(&router->netfpga, COUNTER_3_REG, nanoseconds);
++	writeReg(&router->netfpga, COUNTER_4_REG, frac_nanoseconds);
++
++	/* load the adjustment value */
++	writeReg(&router->netfpga, COUNTER_3_4_LOAD_REG, 1);
++	writeReg(&router->netfpga, COUNTER_3_4_LOAD_REG, 0);
++}
++
++void or_ptp_read_clock(struct router_state *router, 
++		       unsigned *seconds, 
++		       unsigned *nanoseconds)
++{
++    assert(router && seconds && nanoseconds);
++
++    unsigned hi, lo;
++
++    writeReg(&router->netfpga, COUNTER_READ_ENABLE_REG, 1);
++    writeReg(&router->netfpga, COUNTER_READ_ENABLE_REG, 0);
++
++    readReg(&router->netfpga, COUNTER_BIT_95_64_REG, &hi);
++    readReg(&router->netfpga, COUNTER_BIT_63_32_REG, &lo);
++
++    /* ignore the fractional nanoseconds */
++
++    /* convert time from 64-bit ns counter to seconds/nanoseconds */
++    convert_64_to_timestamp(seconds, nanoseconds, hi, lo);
++ 
++    debug_printf("[PTP] Read clock: hi=%u, lo=%u\n", 
++	    hi, lo);
++    debug_printf("[PTP] Read clock: seconds=%u, nanoseconds=%u\n", 
++	    *seconds, *nanoseconds);
++}
++
+diff -x .svn -u -N -r .//or_ptp_hardware.h /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_hardware.h
+--- .//or_ptp_hardware.h	1969-12-31 16:00:00.000000000 -0800
++++ /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_hardware.h	2009-12-02 18:18:29.000000000 -0800
+@@ -0,0 +1,44 @@
++/*-----------------------------------------------------------------------------
++ * File: or_ptp_hardware.h 
++ * Authors: Peter Pawlowski
++ *
++ * Description: Hardware abstraction layer for NetFPGA PTP implementation
++ *
++ *---------------------------------------------------------------------------*/
++
++#ifndef OR_COUNTER_PTP_HARDWARE_H
++#define OR_COUNTER_PTP_HARDWARE_H
++
++struct router_state;
++
++#include "or_ptp_common.h"
++
++/* Reads the RX/TX timestamp for the given interface. Returns true if the
++ * timestamp is valid, placing it into ts; returns false otherwise. */
++unsigned or_ptp_get_ingress_timestamp(struct router_state *router,
++                                     const char *interface,
++                                     ptp_timestamp *ts);
++
++unsigned or_ptp_get_egress_timestamp(struct router_state *router,
++                                     const char *interface,
++                                     ptp_timestamp *ts);
++
++/* Adjusts the internal PTP NetFPGA clock by the given number of seconds and
++ * nanoseconds. */
++void or_ptp_adjust_clock(struct router_state *router,
++                         int seconds,
++                         int nanoseconds);
++
++/* Adjusts the clock rate of the internal NetFPGA PTP clock. Since the clock has
++ * a nominal crystal frequency of 125Mhz, the nanosecond counter gets advanced
++ * by 8 and the fractional nanosecond counter by 0 (by default). This can be changed
++ * to make the rate at which the PTP clock counter advances by faster or slower. */
++void or_ptp_adjust_clock_rate(struct router_state *router,
++                              double nanoseconds_per_tick);
++
++/* Read the current clock value */
++void or_ptp_read_clock(struct router_state *router, 
++		       unsigned *seconds, 
++                       unsigned *nanoseconds);
++
++#endif
+diff -x .svn -u -N -r .//or_ptp_linked_list.c /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_linked_list.c
+--- .//or_ptp_linked_list.c	1969-12-31 16:00:00.000000000 -0800
++++ /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_linked_list.c	2009-12-02 18:18:29.000000000 -0800
+@@ -0,0 +1,32 @@
++#include "or_ptp_linked_list.h"
++
++#include <assert.h>
++#include <memory.h>
++#include <stdlib.h>
++
++void list_copy(char *src, char **dest, unsigned int elem_size,
++               unsigned int off_next, unsigned int off_prev)
++{
++    *dest = NULL;
++
++    char *walker = src, *prev = NULL;
++
++    while(walker) {
++        char *copy = (char *) calloc(1, elem_size);
++        assert(copy);
++        memcpy(copy, walker, elem_size);
++
++        *((void **) (copy + off_next)) = NULL;
++        *((void **) (copy + off_prev)) = prev;
++        if(prev) {
++            *((void **) (prev + off_next)) = copy;
++        }
++
++        if(*dest == NULL) {
++            *dest = copy;
++        }
++
++        prev = copy;
++        walker = *((void **) (walker + off_next));
++    }
++}
+diff -x .svn -u -N -r .//or_ptp_linked_list.h /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_linked_list.h
+--- .//or_ptp_linked_list.h	1969-12-31 16:00:00.000000000 -0800
++++ /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_linked_list.h	2009-12-02 18:18:29.000000000 -0800
+@@ -0,0 +1,53 @@
++/*-----------------------------------------------------------------------------
++* File: ot_ptp_linked_list.h 
++* Authors: David Gobaud
++*
++* Description:
++*
++* Linked list functionality
++*
++*---------------------------------------------------------------------------*/
++
++#ifndef SR_LINKED_LIST_H
++#define SR_LINKED_LIST_H
++
++
++#define list_insert_front(head,node,next,prev) \
++    node->next = head; \
++    if(head) {head->prev = node;} \
++    node->prev = NULL; \
++    head = node
++
++#define list_insert_back(head,iter,node,next,prev) \
++    if(head == NULL) { \
++        list_insert_front(head, node, next, prev); \
++    } else { \
++        iter = head; \
++        while(iter->next) {iter = iter->next;} \
++        iter->next = node; \
++        node->next = NULL; \
++        node->prev = iter; \
++    }    
++
++#define list_remove(head,node,next,prev) \
++    if(head == node) {head = node->next;} \
++    if(node->prev != NULL) {node->prev->next = node->next;} \
++    if(node->next != NULL) {node->next->prev = node->prev;}
++
++#define list_free(type,head,next) \
++    { \
++        struct type *list_free_iter, *list_free_temp; \
++        list_free_iter = head; \
++        while(list_free_iter) { \
++            list_free_temp = list_free_iter->next; \
++            free(list_free_iter); \
++            list_free_iter = list_free_temp; \
++        } \
++        head = NULL; \
++    }
++
++
++void list_copy(char *src, char **dest, unsigned int elem_size,
++               unsigned int off_next, unsigned int off_prev);
++
++#endif
+diff -x .svn -u -N -r .//or_ptp_util.c /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_util.c
+--- .//or_ptp_util.c	1969-12-31 16:00:00.000000000 -0800
++++ /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_util.c	2009-12-02 18:18:29.000000000 -0800
+@@ -0,0 +1,72 @@
++#include "or_ptp_util.h"
++#include "or_ptp_common.h"
++
++#include <arpa/inet.h>
++#include <assert.h>
++#include <stdlib.h>
++
++void ptp_ntoh(ptp_hdr *ptp_hdr)
++{
++    ptp_hdr->len = ntohs(ptp_hdr->len);
++    ptp_hdr->sequence_id = ntohs(ptp_hdr->sequence_id);
++}
++
++void ptp_hton(ptp_hdr *ptp_hdr)
++{
++    ptp_hdr->len = htons(ptp_hdr->len);
++    ptp_hdr->sequence_id = htons(ptp_hdr->sequence_id);
++}
++
++void ptp_timestamp_ntoh(ptp_timestamp *ts)
++{
++    ts->seconds = ntohl(ts->seconds);
++    ts->nanoseconds = ntohl(ts->nanoseconds);
++}
++
++void ptp_timestamp_hton(ptp_timestamp *ts)
++{
++    ts->seconds = htonl(ts->seconds);
++    ts->nanoseconds = htonl(ts->nanoseconds);
++}
++
++void ts_norm(ptp_timestamp *ts)
++{
++    assert(ts);
++
++    int64_t total_ns = ts->nanoseconds + NANOSECONDS_PER_SECOND * ts->seconds;
++
++    ts->seconds = total_ns / NANOSECONDS_PER_SECOND;
++    //
++    // Modulo of negative number is undefined, so be tricky.
++    //
++    ts->nanoseconds = sign(total_ns) * (abs(total_ns) % NANOSECONDS_PER_SECOND);
++}
++
++void ts_diff(ptp_timestamp *diff, ptp_timestamp *start, ptp_timestamp *end)
++{
++    assert(diff && start && end);
++
++    diff->seconds = end->seconds - start->seconds;
++    diff->nanoseconds = end->nanoseconds - start->nanoseconds;
++
++    ts_norm(diff);
++}
++
++void ts_avg(ptp_timestamp *avg, ptp_timestamp *one, ptp_timestamp *two)
++{
++    assert(avg && one && two);
++
++    avg->seconds = one->seconds + two->seconds;
++    avg->nanoseconds = one->nanoseconds + two->nanoseconds;
++
++    int64_t total_ns = avg->nanoseconds + NANOSECONDS_PER_SECOND * avg->seconds;
++    total_ns /= 2;
++    
++    avg->seconds = total_ns / NANOSECONDS_PER_SECOND;
++    //
++    // Modulo of negative number is undefined, so be tricky.
++    //
++    avg->nanoseconds = sign(total_ns) * (abs(total_ns) % NANOSECONDS_PER_SECOND);
++
++    ts_norm(avg);
++}
+diff -x .svn -u -N -r .//or_ptp_util.h /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_util.h
+--- .//or_ptp_util.h	1969-12-31 16:00:00.000000000 -0800
++++ /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/or_ptp_util.h	2009-12-02 18:18:29.000000000 -0800
+@@ -0,0 +1,27 @@
++/*-----------------------------------------------------------------------------
++ * File: or_ptp_util.h 
++ * Authors: Peter Pawlowski
++ *
++ * Description: Various utility functions for NetFPGA PTP time synchornization support.
++ *
++ *---------------------------------------------------------------------------*/
++
++#ifndef OR_COUNTER_PTP_UTIL_H
++#define OR_COUNTER_PTP_UTIL_H
++
++#include "or_ptp_common.h"
++
++/* various utilitiy functions */
++void ptp_ntoh(ptp_hdr *ptp_hdr);
++void ptp_hton(ptp_hdr *ptp_hdr);
++void ptp_timestamp_ntoh(ptp_timestamp *ts);
++void ptp_timestamp_hton(ptp_timestamp *ts);
++
++void ts_norm(ptp_timestamp *ts);
++void ts_diff(ptp_timestamp *diff, ptp_timestamp *start, ptp_timestamp *end);
++void ts_avg(ptp_timestamp *avg, ptp_timestamp *one, ptp_timestamp *two);
++
++#define sign(x) (x > 0 ? 1 : -1)
++
++#endif
++
+diff -x .svn -u -N -r .//ptp.conf /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/ptp.conf
+--- .//ptp.conf	1969-12-31 16:00:00.000000000 -0800
++++ /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/ptp.conf	2009-12-02 18:56:03.000000000 -0800
+@@ -0,0 +1,4 @@
++eth0 passive
++eth1 passive
++eth2 master
++eth3 slave
+diff -x .svn -u -N -r .//sr_base.c /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/sr_base.c
+--- .//sr_base.c	2009-12-02 16:15:52.000000000 -0800
++++ /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/sr_base.c	2009-12-02 18:18:29.000000000 -0800
+@@ -52,6 +52,7 @@
+ 
+ #include "sr_vns.h"
+ #include "sr_base_internal.h"
++#include "or_ptp_common.h"
+ 
+ #ifdef _CPUMODE_
+ #include "sr_cpu_extension_nf2.h"
+@@ -85,6 +86,7 @@
+     /* -- VNS default parameters -- */
+     char  *host   = "vrhost"; 
+     char  *rtable = "rtable"; 
++    char  *ptpconf = "ptp.conf";
+     char  *server = "171.67.71.18"; 
+     char  *cpuhw  = CPU_HW_FILENAME;
+     uint16_t port =  12345;
+@@ -111,7 +113,7 @@
+ 
+     sr = (struct sr_instance*) malloc(sizeof(struct sr_instance)); 
+ 
+-    while ((c = getopt(argc, argv, "hs:v:p:c:t:r:l:i:m:")) != EOF)
++    while ((c = getopt(argc, argv, "hs:v:p:c:t:r:l:i:m:P:")) != EOF)
+     {
+         switch (c) 
+         {
+@@ -131,6 +133,9 @@
+             case 'r':
+                 rtable = optarg; 
+                 break;
++            case 'P':
++                ptpconf = optarg; 
++                break;
+             case 'c':
+                 client = optarg; 
+                 break;
+@@ -176,6 +181,7 @@
+     sr->topo_id = 0;
+     strncpy(sr->vhost,  "cpu",    SR_NAMELEN);
+     strncpy(sr->rtable, rtable, SR_NAMELEN);
++	strncpy(sr->ptpconf, ptpconf, SR_NAMELEN);
+ 
+     if ( sr_cpu_init_hardware(sr, cpuhw) )
+     { exit(1); }
+@@ -184,6 +190,7 @@
+     sr->topo_id = topo;
+     strncpy(sr->vhost,  host,    SR_NAMELEN);
+     strncpy(sr->rtable, rtable, SR_NAMELEN);
++	strncpy(sr->ptpconf, ptpconf, SR_NAMELEN);
+ #endif /* _CPUMODE_ */   
+ 
+     if(! client )
+@@ -200,6 +207,12 @@
+     /* -- log all packets sent/received to logfile (if non-null) -- */
+     sr_vns_init_log(sr, logfile); 
+ 
++    /* initialize PTP */
++    if (or_ptp_init(sr))
++    {
++      perror("Error initializing PTP subsystem");
++    }
++
+     sr_lwip_transport_startup();
+ 
+ 
+@@ -395,5 +408,6 @@
+     printf("     -r rtable.file\n");
+     printf("     -l log.file\n");
+     printf("     -i nf2cX (X being the first port of the NetFPGA card desired)\n");
+-    printf("     -u cpuhw.file\n");
++    printf("     -m cpuhw.file\n");
++    printf("     -P ptpconf.file\n");
+ } /* -- usage -- */
+diff -x .svn -u -N -r .//sr_base_internal.h /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/sr_base_internal.h
+--- .//sr_base_internal.h	2009-12-02 16:15:52.000000000 -0800
++++ /home/jnaous/local/nf2/register_system_2.0/projects/ptp_router/sw/scone-ptp/sr_base_internal.h	2009-12-02 18:18:29.000000000 -0800
+@@ -85,6 +85,8 @@
+     char vhost[32]; /* host name */ 
+     char lhost[32]; /* host name of machine running client */
+     char rtable[32];/* filename for routing table          */
++    char ptpconf[32];/* filename for PTP interface configuration */
++
+     unsigned short topo_id; /* topology id */
+     struct sockaddr_in sr_addr; /* address to server */
+     FILE* logfile; /* file to log all received/sent packets to */

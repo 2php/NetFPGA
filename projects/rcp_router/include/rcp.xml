@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nf:module xmlns:nf="http://www.NetFPGA.org/NF2_register_system" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.NetFPGA.org/NF2_register_system NF2_register_system.xsd ">
+	<nf:name>rcp</nf:name>
+	<nf:prefix>rcp</nf:prefix>
+	<nf:location>udp</nf:location>
+	<nf:description>Control Registers for RCP</nf:description>
+	<nf:blocksize>128</nf:blocksize>
+	<nf:registers>
+		<nf:register>
+		  <nf:name>rate_0</nf:name>
+			<nf:description>The RCP rate 0</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+		<nf:register>
+		  <nf:name>rate_1</nf:name>
+			<nf:description>The RCP rate 1</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+		<nf:register>
+		  <nf:name>rate_2</nf:name>
+			<nf:description>The RCP rate 2</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+		<nf:register>
+		  <nf:name>rate_3</nf:name>
+			<nf:description>The RCP rate 3</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>mac_0_rtt</nf:name>
+			<nf:description>RTT register</nf:description>
+			<nf:type>rtt_reg</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>mac_0_num_rcp</nf:name>
+			<nf:description>Number of RCP packets</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>mac_0_num_bytes</nf:name>
+			<nf:description>Number of bytes</nf:description>
+			<nf:type>num_bytes_reg</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>mac_1_rtt</nf:name>
+			<nf:description>RTT register</nf:description>
+			<nf:type>rtt_reg</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>mac_1_num_rcp</nf:name>
+			<nf:description>Number of RCP packets</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>mac_1_num_bytes</nf:name>
+			<nf:description>Number of bytes</nf:description>
+			<nf:type>num_bytes_reg</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>mac_2_rtt</nf:name>
+			<nf:description>RTT register</nf:description>
+			<nf:type>rtt_reg</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>mac_2_num_rcp</nf:name>
+			<nf:description>Number of RCP packets</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>mac_2_num_bytes</nf:name>
+			<nf:description>Number of bytes</nf:description>
+			<nf:type>num_bytes_reg</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>mac_3_rtt</nf:name>
+			<nf:description>RTT register</nf:description>
+			<nf:type>rtt_reg</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>mac_3_num_rcp</nf:name>
+			<nf:description>Number of RCP packets</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>mac_3_num_bytes</nf:name>
+			<nf:description>Number of bytes</nf:description>
+			<nf:type>num_bytes_reg</nf:type>
+		</nf:register>
+	</nf:registers>
+	<nf:constants>
+	</nf:constants>
+	<nf:types>
+		<nf:type xsi:type="nf:SimpleType">
+			<nf:name>rtt_reg</nf:name>
+			<nf:width>64</nf:width>
+    </nf:type>
+		<nf:type xsi:type="nf:SimpleType">
+			<nf:name>num_bytes_reg</nf:name>
+			<nf:width>64</nf:width>
+    </nf:type>
+	</nf:types>
+</nf:module>

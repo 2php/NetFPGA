@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nf:module xmlns:nf="http://www.NetFPGA.org/NF2_register_system" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.NetFPGA.org/NF2_register_system NF2_register_system.xsd ">
+	<nf:name>out_aggr</nf:name>
+	<nf:prefix>out_aggr</nf:prefix>
+	<nf:location>udp</nf:location>
+	<nf:description>Round-robin output port aggregator</nf:description>
+	<nf:blocksize>256</nf:blocksize>
+	<nf:registers>
+		<nf:register>
+			<nf:name>num_pkts_sent</nf:name>
+			<nf:description>Number of packets sent</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>last_pkt_word_0</nf:name>
+			<nf:description>Data word 0 of the last packet to pass
+				through the arbiter</nf:description>
+			<nf:type>dataword</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>last_pkt_ctrl_0</nf:name>
+			<nf:description>Control word 0 of the last packet to pass
+				through the arbiter</nf:description>
+			<nf:type>ctrlword</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>last_pkt_word_1</nf:name>
+			<nf:description>Data word 1 of the last packet to pass
+				through the arbiter</nf:description>
+			<nf:type>dataword</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>last_pkt_ctrl_1</nf:name>
+			<nf:description>Control word 1 of the last packet to pass
+				through the arbiter</nf:description>
+			<nf:type>ctrlword</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>state</nf:name>
+			<nf:description>State of the internal state machine</nf:description>
+		</nf:register>
+		<nf:register>
+			<nf:name>outport</nf:name>
+			<nf:description>output port selection</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+	</nf:registers>
+</nf:module>

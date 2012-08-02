@@ -1,0 +1,30 @@
+--- orig/or_cli.c	2008-06-10 23:54:23.000000000 -0700
++++ or_cli.c	2008-06-10 23:57:23.000000000 -0700
+@@ -249,7 +249,26 @@
+ 	usage = "\tsend lsu\n";
+ 	send_to_socket(req->sockfd, usage, strlen(usage));
+ 
+-
++  #ifdef _OQ_DRR_
++    /* DRR */
++    usage = "\tdrr show\n";
++	  send_to_socket(req->sockfd, usage, strlen(usage));
++
++    usage = "\tdrr set quantum <quantum>\n";
++	  send_to_socket(req->sockfd, usage, strlen(usage));
++
++    usage = "\tdrr set weight <queue> <weight>\n";
++	  send_to_socket(req->sockfd, usage, strlen(usage));
++
++    usage = "\tdrr set slow <slow factor>\n";
++	  send_to_socket(req->sockfd, usage, strlen(usage));
++
++    usage = "\tdrr set policy <tos|port>\n";
++	  send_to_socket(req->sockfd, usage, strlen(usage));
++
++    usage = "\tdrr set tos <queue> <tos value>\n";
++	  send_to_socket(req->sockfd, usage, strlen(usage));
++  #endif
+ 	
+ 	/* HARDWARE */
+ 	

@@ -1,0 +1,2 @@
+test_desc = Test forwarding of packets in a learning switch
+finish = 220000

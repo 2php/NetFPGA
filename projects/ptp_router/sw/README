@@ -1,0 +1,22 @@
+NetFPGA PTP README
+Peter Pawlowski
+piotrek@cs.stanford.edu
+
+INSTALLATION
+(1) Type "make install" in the sw/ directory. This copies over SCONE and patches for PTP support.
+(2) cd into scone-ptp/ and type make. This creates the scone_ptp executable.
+
+DEVELOPMENT
+(1) Modify the code under scone-ptp/
+(2) cd ../ from scone-ptp
+(3) do "make patch" to create a new patch
+
+NOTES
+-- The interface states are configured via the ptp.conf. See the included file for an example.
+-- scone_ptp dumps SYNC and PDELAY information to sync.log and pdelay.log, respectively.
+-- To silence all the debug output, change the debug_printf macro in or_ptp_common.h to be nothing.
+
+OUTSTANDING ISSUES
+The hardware implementation can only timestamp a single incoming packet at once. This can cause race 
+conditions if two PTP packets arrive without an intervening read of the timestamp. This problem will
+likely get fixed in the future, but for now we wait 50 ms between sending PTP packets on the same port. 

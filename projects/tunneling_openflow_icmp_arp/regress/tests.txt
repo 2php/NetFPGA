@@ -1,0 +1,7 @@
+test_exact_simple1
+test_exact_simple2
+test_wildcard_simple1
+test_wildcard_simple2
+test_loopback_encap
+test_loopback_decap
+test_icmp_reply

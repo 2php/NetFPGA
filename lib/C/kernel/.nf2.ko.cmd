@@ -1,0 +1,1 @@
+cmd_/home/summercamp/netfpga/lib/C/kernel/nf2.ko := ld -r -m elf_i386 -T /usr/src/kernels/2.6.34.9-69.fc13.i686/scripts/module-common.lds --build-id -o /home/summercamp/netfpga/lib/C/kernel/nf2.ko /home/summercamp/netfpga/lib/C/kernel/nf2.o /home/summercamp/netfpga/lib/C/kernel/nf2.mod.o

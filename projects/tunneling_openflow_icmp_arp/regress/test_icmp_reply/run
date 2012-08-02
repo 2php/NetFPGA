@@ -1,0 +1,90 @@
+#!/usr/bin/perl
+
+use strict;
+use NF::RegressLib;
+use NF::PacketLib;
+use Test::TestLib;
+use NFUtils::SimplePacket;
+
+use reg_defines_tunneling_openflow_icmp_arp;
+
+# launch PCAP listenting to nf2c0, nf2c1
+my @interfaces = ( "nf2c0", "nf2c1" , "nf2c2", "nf2c3");
+nftest_init( \@ARGV, \@interfaces );
+nftest_start_vhosts( \@interfaces );
+
+# Register the router's IP addresses
+nftest_register_router( 'nf2c0', '00:00:00:00:00:01', '192.168.0.2' );
+nftest_register_router( 'nf2c1', '00:00:00:00:00:02', '192.168.1.2' );
+nftest_register_router( 'nf2c2', '00:00:00:00:00:03', '192.168.2.2' );
+nftest_register_router( 'nf2c3', '00:00:00:00:00:04', '192.168.3.2' );
+
+# Register the hosts
+nftest_create_host( 'nf2c0', 'aa:bb:cc:dd:ee:f0', '192.168.0.100' );
+nftest_create_host( 'nf2c1', 'ca:fe:f0:0d:00:00', '192.168.1.100' );
+nftest_create_host( 'nf2c2', 'ca:fe:f0:0d:0d:0d', '192.168.2.100' );
+nftest_create_host( 'nf2c3', 'ca:fe:f0:0e:0e:0e', '192.168.3.100' );
+
+# Enable the module
+nftest_regwrite("nf2c0", ICMP_REPLY_ENABLE_REG(), 0x1);
+
+# Send a packet from host to router on nf2c0
+my $pkt = nftest_send_ICMP_echo_req( '192.168.0.100', '192.168.0.2' );
+
+# Expect various packets
+nftest_expect_ARP_exchange( '192.168.0.100', '192.168.0.2' );
+nftest_expect_ARP_exchange( '192.168.0.2',   '192.168.0.100' );
+
+# Create the ICMP reply packet
+$pkt = nftest_create_ICMP_echo_reply($pkt);
+nftest_vhost_expect( '192.168.0.100', $pkt->packed );
+
+# Send a packet on from host to router nf2c1
+my $pkt = nftest_send_ICMP_echo_req( '192.168.1.100', '192.168.1.2' );
+
+# Expect various packets
+nftest_expect_ARP_exchange( '192.168.1.100', '192.168.1.2' );
+nftest_expect_ARP_exchange( '192.168.1.2',   '192.168.1.100' );
+
+# Create the ICMP reply packet
+$pkt = nftest_create_ICMP_echo_reply($pkt);
+nftest_vhost_expect( '192.168.1.100', $pkt->packed );
+
+# Send a packet on from host to router nf2c2
+my $pkt = nftest_send_ICMP_echo_req( '192.168.2.100', '192.168.2.2' );
+
+# Expect various packets
+nftest_expect_ARP_exchange( '192.168.2.100', '192.168.2.2' );
+nftest_expect_ARP_exchange( '192.168.2.2',   '192.168.2.100' );
+
+# Create the ICMP reply packet
+$pkt = nftest_create_ICMP_echo_reply($pkt);
+nftest_vhost_expect( '192.168.2.100', $pkt->packed );
+
+# Send a packet on from host to router nf2c3
+my $pkt = nftest_send_ICMP_echo_req( '192.168.3.100', '192.168.3.2' );
+
+# Expect various packets
+nftest_expect_ARP_exchange( '192.168.3.100', '192.168.3.2' );
+nftest_expect_ARP_exchange( '192.168.3.2',   '192.168.3.100' );
+
+# Create the ICMP reply packet
+$pkt = nftest_create_ICMP_echo_reply($pkt);
+nftest_vhost_expect( '192.168.3.100', $pkt->packed );
+
+sleep 5;
+
+# Finish and print errors, if any
+nftest_finish();
+my $total_errors = nftest_print_vhost_errors();
+my $exitCode = 1;
+
+if ( $total_errors == 0 ) {
+    print "SUCCESS!\n";
+    $exitCode = 0;
+}
+else {
+    print "FAIL: $total_errors errors\n";
+    $exitCode = 1;
+}
+

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nf:module xmlns:nf="http://www.NetFPGA.org/NF2_register_system" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.NetFPGA.org/NF2_register_system NF2_register_system.xsd ">
+	<nf:name>decap</nf:name>
+	<nf:prefix>decap</nf:prefix>
+	<nf:location>udp</nf:location>
+	<nf:description>Decapsulation Registers</nf:description>
+	<nf:blocksize>64</nf:blocksize>
+	<nf:registers>
+		<nf:register>
+			<nf:name>num_pkts_decapped</nf:name>
+			<nf:description>Number of packets decapsulated</nf:description>
+			<nf:type>generic_counter32</nf:type>
+	  	</nf:register>
+		<nf:register>
+			<nf:name>num_pkts_unchanged</nf:name>
+			<nf:description>Number of packets untouched</nf:description>
+			<nf:type>generic_counter32</nf:type>
+	  	</nf:register>
+		<nf:register>
+			<nf:name>num_pkts_processed</nf:name>
+			<nf:description>Number of packets processed</nf:description>
+			<nf:type>generic_counter32</nf:type>
+	  	</nf:register>
+		<nf:register>
+			<nf:name>enable</nf:name>
+			<nf:description>Decapsulation module enable</nf:description>
+			<nf:type>generic_software32</nf:type>
+	  	</nf:register>
+		<nf:register>
+			<nf:name>ip_proto</nf:name>
+			<nf:description>Target IP protocol number for decapsulation</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+	</nf:registers>
+	<nf:constants>
+	</nf:constants>
+	<nf:types>
+	</nf:types>
+</nf:module>

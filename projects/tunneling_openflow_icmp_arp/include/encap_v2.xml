@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nf:module xmlns:nf="http://www.NetFPGA.org/NF2_register_system" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.NetFPGA.org/NF2_register_system NF2_register_system.xsd ">
+	<nf:name>encap_v2</nf:name>
+	<nf:prefix>encap</nf:prefix>
+	<nf:location>udp</nf:location>
+	<nf:description>Encapsulation Registers</nf:description>
+	<nf:blocksize>64</nf:blocksize>
+	<nf:registers>
+		<nf:register>
+			<nf:name>enable</nf:name>
+			<nf:description>Encap module enable</nf:description>
+		  	<nf:type>generic_software32</nf:type>
+  		</nf:register>
+		<nf:register>
+			<nf:name>tag</nf:name>
+			<nf:description>Encap header tag</nf:description>
+			<nf:type>generic_software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>ports</nf:name>
+			<nf:description>Encap header ports</nf:description>
+	  		<nf:type>generic_software32</nf:type>
+  		</nf:register>
+		<nf:register>
+			<nf:name>src_ip</nf:name>
+			<nf:description>Encap header Source IP address</nf:description>
+	  		<nf:type>generic_software32</nf:type>
+  		</nf:register>
+		<nf:register>
+			<nf:name>dst_ip</nf:name>
+			<nf:description>Encap header Destination IP address</nf:description>
+	  		<nf:type>generic_software32</nf:type>
+  		</nf:register>
+		<nf:register>
+			<nf:name>ttl_proto</nf:name>
+			<nf:description>Encap header TTL and Proto fields</nf:description>
+	  		<nf:type>generic_software32</nf:type>
+  		</nf:register>
+		<nf:register>
+			<nf:name>tos</nf:name>
+			<nf:description>Encap header TOS</nf:description>
+		  	<nf:type>generic_software32</nf:type>
+	  	</nf:register>
+		<nf:register>
+			<nf:name>src_mac</nf:name>
+			<nf:description>Encap header source MAC address</nf:description>
+		  	<nf:type>ethernet_addr</nf:type>
+	  	</nf:register>
+		<nf:register>
+			<nf:name>dst_mac</nf:name>
+			<nf:description>Encap header destination MAC address</nf:description>
+			<nf:type>ethernet_addr</nf:type>
+		</nf:register>
+	</nf:registers>
+	<nf:constants>
+	</nf:constants>
+	<nf:types>
+	</nf:types>
+</nf:module>

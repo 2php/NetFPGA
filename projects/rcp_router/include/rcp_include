@@ -1,0 +1,73 @@
+`define RCP_REG_ADDR_WIDTH               `UDP_BLOCK_SIZE_64_REG_ADDR_WIDTH
+`define RCP_BLOCK_ADDR_WIDTH             `UDP_BLOCK_SIZE_64_BLOCK_ADDR_WIDTH
+`define RCP_BLOCK_ADDR                   `RCP_BLOCK_ADDR_WIDTH'h8
+`define RCP_BLOCK_TAG                    ({`UDP_BLOCK_SIZE_64_TAG, `RCP_BLOCK_ADDR})
+
+//-- RCP registers
+ `define RCP_RATE                        `RCP_REG_ADDR_WIDTH'h2
+ `define RCP_MAC_0_RTT_L                 `RCP_REG_ADDR_WIDTH'h4
+ `define RCP_MAC_0_RTT_H                 `RCP_REG_ADDR_WIDTH'h5
+ `define RCP_MAC_0_NUM_RCP               `RCP_REG_ADDR_WIDTH'h6
+ `define RCP_MAC_0_NUM_BYTE_L            `RCP_REG_ADDR_WIDTH'h7
+ `define RCP_MAC_0_NUM_BYTE_H            `RCP_REG_ADDR_WIDTH'h8
+ `define RCP_MAC_1_RTT_L                 `RCP_REG_ADDR_WIDTH'h9
+ `define RCP_MAC_1_RTT_H                 `RCP_REG_ADDR_WIDTH'ha
+ `define RCP_MAC_1_NUM_RCP               `RCP_REG_ADDR_WIDTH'hb
+ `define RCP_MAC_1_NUM_BYTE_L            `RCP_REG_ADDR_WIDTH'hc
+ `define RCP_MAC_1_NUM_BYTE_H            `RCP_REG_ADDR_WIDTH'hd
+ `define RCP_MAC_2_RTT_L                 `RCP_REG_ADDR_WIDTH'he
+ `define RCP_MAC_2_RTT_H                 `RCP_REG_ADDR_WIDTH'hf
+ `define RCP_MAC_2_NUM_RCP               `RCP_REG_ADDR_WIDTH'h10
+ `define RCP_MAC_2_NUM_BYTE_L            `RCP_REG_ADDR_WIDTH'h11
+ `define RCP_MAC_2_NUM_BYTE_H            `RCP_REG_ADDR_WIDTH'h12
+ `define RCP_MAC_3_RTT_L                 `RCP_REG_ADDR_WIDTH'h13
+ `define RCP_MAC_3_RTT_H                 `RCP_REG_ADDR_WIDTH'h14
+ `define RCP_MAC_3_NUM_RCP               `RCP_REG_ADDR_WIDTH'h15
+ `define RCP_MAC_3_NUM_BYTE_L            `RCP_REG_ADDR_WIDTH'h16
+ `define RCP_MAC_3_NUM_BYTE_H            `RCP_REG_ADDR_WIDTH'h17
+
+ `define RCP_RATE_REG                         (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_RATE})
+ `define RCP_MAC_0_RTT_L_REG                  (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_0_RTT_L})
+ `define RCP_MAC_0_RTT_H_REG                  (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_0_RTT_H})
+ `define RCP_MAC_0_NUM_BYTE_L_REG             (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_0_NUM_BYTE_L})
+ `define RCP_MAC_0_NUM_BYTE_H_REG             (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_0_NUM_BYTE_H})
+ `define RCP_MAC_0_NUM_RCP_REG                (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_0_NUM_RCP})
+ `define RCP_MAC_1_RTT_L_REG                  (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_1_RTT_L})
+ `define RCP_MAC_1_RTT_H_REG                  (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_1_RTT_H})
+ `define RCP_MAC_1_NUM_BYTE_L_REG             (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_1_NUM_BYTE_L})
+ `define RCP_MAC_1_NUM_BYTE_H_REG             (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_1_NUM_BYTE_H})
+ `define RCP_MAC_1_NUM_RCP_REG                (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_1_NUM_RCP})
+ `define RCP_MAC_2_RTT_L_REG                  (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_2_RTT_L})
+ `define RCP_MAC_2_RTT_H_REG                  (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_2_RTT_H})
+ `define RCP_MAC_2_NUM_BYTE_L_REG             (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_2_NUM_BYTE_L})
+ `define RCP_MAC_2_NUM_BYTE_H_REG             (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_2_NUM_BYTE_H})
+ `define RCP_MAC_2_NUM_RCP_REG                (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_2_NUM_RCP})
+
+ `define RCP_MAC_3_RTT_L_REG                  (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_3_RTT_L})
+ `define RCP_MAC_3_RTT_H_REG                  (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_3_RTT_H})
+ `define RCP_MAC_3_NUM_BYTE_L_REG             (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_3_NUM_BYTE_L})
+ `define RCP_MAC_3_NUM_BYTE_H_REG             (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_3_NUM_BYTE_H})
+ `define RCP_MAC_3_NUM_RCP_REG                (`UDP_BASE_ADDRESS | {`RCP_BLOCK_TAG, `RCP_MAC_3_NUM_RCP})
+
+ `define PRINT_USER_REG_ADDRESSES                                                                                                                  \
+         $fwrite(c_reg_defines_fd, "#define RCP_RATE_REG                            0x%07x\n", `RCP_RATE_REG<<2);                                  \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_0_RTT_L_REG                     0x%07x\n", `RCP_MAC_0_RTT_L_REG<<2);                           \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_0_RTT_H_REG                     0x%07x\n", `RCP_MAC_0_RTT_H_REG<<2);                           \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_0_NUM_RCP_REG                   0x%07x\n", `RCP_MAC_0_NUM_RCP_REG<<2);                         \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_0_NUM_BYTE_L_REG                0x%07x\n", `RCP_MAC_0_NUM_BYTE_L_REG<<2);                      \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_0_NUM_BYTE_H_REG                0x%07x\n", `RCP_MAC_0_NUM_BYTE_H_REG<<2);                      \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_1_RTT_L_REG                     0x%07x\n", `RCP_MAC_1_RTT_L_REG<<2);                           \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_1_RTT_H_REG                     0x%07x\n", `RCP_MAC_1_RTT_H_REG<<2);                           \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_1_NUM_RCP_REG                   0x%07x\n", `RCP_MAC_1_NUM_RCP_REG<<2);                         \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_1_NUM_BYTE_L_REG                0x%07x\n", `RCP_MAC_1_NUM_BYTE_L_REG<<2);                      \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_1_NUM_BYTE_H_REG                0x%07x\n", `RCP_MAC_1_NUM_BYTE_H_REG<<2);                      \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_2_RTT_L_REG                     0x%07x\n", `RCP_MAC_2_RTT_L_REG<<2);                           \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_2_RTT_H_REG                     0x%07x\n", `RCP_MAC_2_RTT_H_REG<<2);                           \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_2_NUM_RCP_REG                   0x%07x\n", `RCP_MAC_2_NUM_RCP_REG<<2);                         \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_2_NUM_BYTE_L_REG                0x%07x\n", `RCP_MAC_2_NUM_BYTE_L_REG<<2);                      \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_2_NUM_BYTE_H_REG                0x%07x\n", `RCP_MAC_2_NUM_BYTE_H_REG<<2);                      \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_3_RTT_L_REG                     0x%07x\n", `RCP_MAC_3_RTT_L_REG<<2);                           \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_3_RTT_H_REG                     0x%07x\n", `RCP_MAC_3_RTT_H_REG<<2);                           \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_3_NUM_RCP_REG                   0x%07x\n\n", `RCP_MAC_3_NUM_RCP_REG<<2);                       \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_3_NUM_BYTE_L_REG                0x%07x\n", `RCP_MAC_3_NUM_BYTE_L_REG<<2);                      \
+         $fwrite(c_reg_defines_fd, "#define RCP_MAC_3_NUM_BYTE_H_REG                0x%07x\n", `RCP_MAC_3_NUM_BYTE_H_REG<<2)

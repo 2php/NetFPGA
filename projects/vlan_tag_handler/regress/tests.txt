@@ -1,0 +1,6 @@
+test_loopback_simple/run.pl
+test_vlan_through/run.pl
+test_wo_vlan_through/run.pl
+test_vlan_add/run.pl
+test_vlan_mod/run.pl
+test_vlan_strip/run.pl

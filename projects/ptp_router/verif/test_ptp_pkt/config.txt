@@ -1,0 +1,3 @@
+test_desc = test ptp simple
+finish = 120000
+

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nf:module xmlns:nf="http://www.NetFPGA.org/NF2_register_system" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.NetFPGA.org/NF2_register_system NF2_register_system.xsd ">
+	<nf:name>drr_oq</nf:name>
+	<nf:prefix>drr_oq</nf:prefix>
+	<nf:location>udp</nf:location>
+	<nf:description>DRR Output Queue Registers</nf:description>
+	<nf:blocksize>256</nf:blocksize>
+	<nf:registers>
+		<nf:register>
+			<nf:name>queue0_num_drop</nf:name>
+			<nf:description>Number of packets destined to Q0 that are dropped</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>queue1_num_drop</nf:name>
+			<nf:description>Number of packets destined to Q0 that are dropped</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>queue2_num_drop</nf:name>
+			<nf:description>Number of packets destined to Q0 that are dropped</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>queue3_num_drop</nf:name>
+			<nf:description>Number of packets destined to Q0 that are dropped</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>queue4_num_drop</nf:name>
+			<nf:description>Number of packets destined to Q0 that are dropped</nf:description>
+			<nf:type>counter32</nf:type>
+		</nf:register>
+
+		<nf:register>
+			<nf:name>slow_factor</nf:name>
+			<nf:description>Rate limit (slow down) output link with this factor</nf:description>
+			<nf:type>software32</nf:type>
+		</nf:register>
+
+		<nf:register>
+			<nf:name>queue0_credit</nf:name>
+			<nf:description>Numer of bytes credited to Queue0 at each round</nf:description>
+			<nf:type>software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>queue1_credit</nf:name>
+			<nf:description>Numer of bytes credited to Queue1 at each round</nf:description>
+			<nf:type>software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>queue2_credit</nf:name>
+			<nf:description>Numer of bytes credited to Queue2 at each round</nf:description>
+			<nf:type>software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>queue3_credit</nf:name>
+			<nf:description>Numer of bytes credited to Queue3 at each round</nf:description>
+			<nf:type>software32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>queue4_credit</nf:name>
+			<nf:description>Numer of bytes credited to Queue4 at each round</nf:description>
+			<nf:type>software32</nf:type>
+		</nf:register>
+
+		<nf:register>
+			<nf:name>quantum</nf:name>
+			<nf:description>Not used</nf:description>
+			<nf:type>software32</nf:type>
+		</nf:register>
+
+		<nf:register>
+			<nf:name>queue0_occupancy</nf:name>
+			<nf:description>Queue0 Occupancy</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>queue1_occupancy</nf:name>
+			<nf:description>Queue1 Occupancy</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>queue2_occupancy</nf:name>
+			<nf:description>Queue2 Occupancy</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>queue3_occupancy</nf:name>
+			<nf:description>Queue3 Occupancy</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>queue4_occupancy</nf:name>
+			<nf:description>Queue4 Occupancy</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+
+		<nf:register>
+			<nf:name>state1</nf:name>
+			<nf:description>FSM1 state - for debugging</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>state2</nf:name>
+			<nf:description>FSM2 state - for debugging</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>state3</nf:name>
+			<nf:description>FSM3 state - for debugging</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>request_fifo_empty</nf:name>
+			<nf:description>for debugging only - shows request fifo empty space</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+		<nf:register>
+			<nf:name>count</nf:name>
+			<nf:description>for debugging only - shows the value of count signal</nf:description>
+			<nf:type>generic_hardware32</nf:type>
+		</nf:register>
+
+	</nf:registers>
+</nf:module>

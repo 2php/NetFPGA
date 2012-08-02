@@ -1,0 +1,37 @@
+--- orig/or_main.c	2008-06-10 17:31:55.290620000 -0700
++++ or_main.c	2008-06-11 00:04:04.112238000 -0700
+@@ -40,6 +40,10 @@
+ #include "or_www.h"
+ #include "or_nat.h"
+ 
++#ifdef _OQ_DRR_
++#include "drr_cli.h"
++#endif
++
+ inline router_state* get_router_state(struct sr_instance* sr) {
+ 	return (router_state*)sr->interface_subsystem;
+ }
+@@ -249,6 +253,11 @@
+     
+     sr_set_subsystem(sr, (void*)rs);
+ 
++    #ifdef _OQ_DRR_
++      /* Initialize DRR */
++      drr_init(rs);
++    #endif
++
+     /** SPAWN THE ARP QUEUE THREAD **/
+     rs->arp_thread = (pthread_t*)malloc(sizeof(pthread_t));
+ 
+@@ -685,6 +694,11 @@
+ 	register_cli_command(&(rs->cli_commands), "nat del", &cli_nat_del);
+ 	register_cli_command(&(rs->cli_commands), "show hw nat table", &cli_show_hw_nat_table);
+ 	*/
++
++#ifdef _OQ_DRR_
++  /* Register the DRR CLI commands. */
++  drr_register_cli_commands(&(rs->cli_commands));
++#endif
+ 	
+ 	/* bubble sort command list */
+ 	int swapped = 0;

@@ -1,0 +1,22 @@
+--- orig/or_data_types.h	2008-06-10 17:31:55.264639000 -0700
++++ or_data_types.h	2008-06-10 19:04:39.893024000 -0700
+@@ -12,6 +12,7 @@
+ #include <pthread.h>
+ #include <time.h>
+ #include "nf2/nf2util.h"
++#include "drr.h"
+ 
+ 
+ /** ETHERNET HEADER STRUCTURE **/	
+@@ -286,6 +287,11 @@
+ 	node* local_ip_filter_list;
+ 	
+ 	pthread_mutex_t* log_dumper_mutex;
++
++    #ifdef _OQ_DRR_
++      float drr_weights[DRR_QUEUES];
++    #endif
++
+ };
+ typedef struct router_state router_state;
+ 
