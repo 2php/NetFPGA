@@ -1,5 +1,0 @@
-test_drop_novlan/run.pl
-test_drop_wrongvlan/run.pl
-test_inaggr_outrandom/run.pl
-test_inaggr_outmod/run.pl
-test_loopback_simple/run.pl
