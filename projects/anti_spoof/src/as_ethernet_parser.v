@@ -18,11 +18,14 @@
     input  [CTRL_WIDTH-1:0]            in_ctrl,
     input                              in_wr,
 
-    // --- Interface to output_port_lookup
+    // --- Interface to anti_spoof
+    output [31:0]                      dst_ip,
+    output [31:0]                      src_ip,
+    // --- Interface to anti_spoof
     output [47:0]                      dst_mac,
     output [47:0]                      src_mac,
     output [15:0]                      ethertype,
-    output                             eth_done,
+    output                             ip_done,
     output [NUM_IQ_BITS-1:0]           src_port,
 
     // --- Misc
@@ -42,10 +45,12 @@
 	   (.in_data(in_data),
 	    .in_ctrl(in_ctrl),
 	    .in_wr(in_wr),
+	    .dst_ip (dst_ip),
+	    .src_ip(src_ip),
 	    .dst_mac (dst_mac),
 	    .src_mac(src_mac),
 	    .ethertype (ethertype),
-	    .eth_done (eth_done),
+	    .ip_done (ip_done),
 	    .src_port(src_port),
 	    .reset(reset),
 	    .clk(clk));
@@ -59,10 +64,12 @@
 	   (.in_data(in_data),
 	    .in_ctrl(in_ctrl),
 	    .in_wr(in_wr),
+	    .dst_ip (dst_ip),
+	    .src_ip(src_ip),
 	    .dst_mac (dst_mac),
 	    .src_mac(src_mac),
 	    .ethertype (ethertype),
-	    .eth_done (eth_done),
+	    .ip_done (ip_done),
 	    .src_port(src_port),
 	    .reset(reset),
 	    .clk(clk));

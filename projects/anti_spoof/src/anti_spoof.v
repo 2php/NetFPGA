@@ -75,11 +75,13 @@
    //---------------------- Wires and regs----------------------------
 
    wire                         lookup_ack;
+   wire [31:0]                  dst_ip;
+   wire [31:0]                  src_ip;
    wire [47:0]                  dst_mac;
    wire [47:0]                  src_mac;
    wire [15:0]                  ethertype;
    wire [NUM_IQ_BITS-1:0]       src_port;
-   wire                         eth_done;
+   wire                         ip_done;
    wire [NUM_OUTPUT_QUEUES-1:0] dst_ports;
    wire [NUM_OUTPUT_QUEUES-1:0] dst_ports_latched;
 
@@ -124,10 +126,12 @@
          (.in_data(in_data),
           .in_ctrl(in_ctrl),
           .in_wr(in_wr),
+          .dst_ip (dst_ip),
+          .src_ip(src_ip),
           .dst_mac (dst_mac),
           .src_mac(src_mac),
           .ethertype (ethertype),
-          .eth_done (eth_done),
+          .ip_done (ip_done),
           .src_port(src_port),
           .reset(reset),
           .clk(clk));
@@ -142,7 +146,7 @@
      (.dst_mac (dst_mac),
       .src_mac (src_mac),
       .src_port (src_port),
-      .lookup_req (eth_done),
+      .lookup_req (ip_done),
       .dst_ports (dst_ports),
       .lookup_ack (lookup_ack),
 

@@ -19,6 +19,8 @@
     input                              in_wr,
 
     // --- Interface to output_port_lookup
+    output reg [31:0]                  dst_ip,
+    output reg [31:0]                  src_ip,
     output reg [47:0]                  dst_mac,
     output reg [47:0]                  src_mac,
     output reg [15:0]                  ethertype,
