@@ -49,7 +49,7 @@ num_broadcast = 1
 pkts = []
 for i in range(num_broadcast):
     pkt = make_IP_pkt(src_MAC="aa:bb:cc:dd:ee:ff", dst_MAC=routerMAC[0],
-                      src_IP="192.168.0.1", dst_IP="192.168.1.1", pkt_len=100)
+                      src_IP="192.168.0.2", dst_IP="192.168.1.1", pkt_len=100)
 
     nftest_send_phy('nf2c0', pkt)
 # don't expect

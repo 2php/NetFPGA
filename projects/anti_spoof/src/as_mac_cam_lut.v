@@ -68,7 +68,8 @@
    //--------------------- Internal Parameter-------------------------
    parameter RESET            = 1;
    parameter IDLE             = 2;
-   parameter LATCH_DST_LOOKUP = 4;
+   parameter CHECK_SPOOF      = 4;
+   //parameter LATCH_DST_LOOKUP = 4;
    parameter CHECK_SRC_MATCH  = 8;
    parameter UPDATE_ENTRY     = 16;
    parameter ADD_ENTRY        = 32;
@@ -98,6 +99,7 @@
    reg [NUM_OUTPUT_QUEUES+32+48:0]          lut_wr_data, lut_wr_data_next;
    reg [NUM_OUTPUT_QUEUES+32+48:0]          lut_rd_data;
    reg [NUM_OUTPUT_QUEUES+32+48:0]          lut[LUT_DEPTH-1:0];
+   reg [31:0]                               lut_rd_ip, lut_rd_ip_next;
 
    reg                                   reset_count_inc;
    reg [LUT_DEPTH_BITS:0]                reset_count;
@@ -132,9 +134,10 @@
    endgenerate
 
    /* assign lut outputs */
-   assign rd_oq = lut_rd_data[NUM_OUTPUT_QUEUES+47:48];
+   assign rd_wr_protect = lut_rd_data[NUM_OUTPUT_QUEUES+80];
+   assign rd_oq = lut_rd_data[NUM_OUTPUT_QUEUES+32+47:32+48];
+   //assign lut_rd_ip = lut_rd_data[32+47:48];
    assign rd_mac = lut_rd_data[47:0];
-   assign rd_wr_protect = lut_rd_data[NUM_OUTPUT_QUEUES+48];
 
    /* if we get a miss then set the dst port to the default ports
     * without the source */
@@ -243,8 +246,9 @@
            if(cam_match) begin
               //ISS ???
               lookup_ack_next = 1;
-              lut_hit_next = 1;
-              lookup_state_next = UPDATE_ENTRY;
+              //lut_hit_next = 1;
+              lookup_state_next = CHECK_SPOOF;
+              lut_rd_ip_next <= lut_rd_data[32+47:48];
            end
            /* otherwise we need to add the entry */
            else begin
@@ -254,6 +258,17 @@
               lookup_state_next = ADD_ENTRY;
            end
         end // case: CHECK_SRC_MATCH
+        
+        CHECK_SPOOF: begin
+           // read src ip from lut
+           // if packet's src ip is different then LUT
+           // then ask for drop
+           if(src_ip_latched != lut_rd_ip) begin	
+              lut_hit_next = 1;
+              //lookup_ack_next = 1;
+           end
+           lookup_state_next = IDLE;
+        end // case: CHECK_SPOOF
 
         UPDATE_ENTRY: begin
            if(entry_needs_update) begin
@@ -298,6 +313,7 @@
          lut_wr_en         <= 0;
          lut_wr_data       <= 0;
          lut_wr_addr       <= 0;
+         lut_rd_ip         <= 0;
 
          lookup_state      <= RESET;
       end
@@ -332,15 +348,16 @@
          lut_wr_addr       <= lut_wr_addr_next;
 
          lookup_state      <= lookup_state_next;
+         lut_rd_ip         <= lut_rd_ip_next;
       end
    end
 
    // synthesis translate_off
-   always @(posedge clk) begin
-      if(lookup_state==LATCH_DST_LOOKUP && cam_busy && src_mac_latched == dst_mac) begin
-         $display("%t %m WARNING: requested lookup for addr %012x while CAM is busy writing it. Returning broadcast.", $time, dst_mac);
-      end
-   end
+   //always @(posedge clk) begin
+      //if(lookup_state==LATCH_DST_LOOKUP && cam_busy && src_mac_latched == dst_mac) begin
+         //$display("%t %m WARNING: requested lookup for addr %012x while CAM is busy writing it. Returning broadcast.", $time, dst_mac);
+      //end
+   //end
    // synthesis translate_on
 
 endmodule // mac_lut
