@@ -18,6 +18,8 @@
       parameter DEFAULT_MISS_OUTPUT_PORTS = 8'h55) // only send to the txfifos not the cpu
 
    ( // --- lookup and learn port
+     input [31:0]                       dst_ip,
+     input [31:0]                       src_ip,
      input [47:0]                       dst_mac,
      input [47:0]                       src_mac,
      input [NUM_IQ_BITS-1:0]            src_port,
@@ -85,15 +87,17 @@
    wire [NUM_OUTPUT_QUEUES-1:0]          decoded_value[NUM_OUTPUT_QUEUES-1:0];
    reg  [NUM_OUTPUT_QUEUES-1:0]          src_port_decoded;
    reg  [47:0]                           src_mac_latched;
+   reg  [31:0]                           src_ip_latched;
    reg                                   latch_src;
 
    reg  [5:0]                            lookup_state, lookup_state_next;
 
    reg [LUT_DEPTH_BITS-1:0]              lut_rd_addr, lut_wr_addr, lut_wr_addr_next;
    reg                                   lut_wr_en, lut_wr_en_next;
-   reg [NUM_OUTPUT_QUEUES+48:0]          lut_wr_data, lut_wr_data_next;
-   reg [NUM_OUTPUT_QUEUES+48:0]          lut_rd_data;
-   reg [NUM_OUTPUT_QUEUES+48:0]          lut[LUT_DEPTH-1:0];
+   /* 32: SRC IP */
+   reg [NUM_OUTPUT_QUEUES+32+48:0]          lut_wr_data, lut_wr_data_next;
+   reg [NUM_OUTPUT_QUEUES+32+48:0]          lut_rd_data;
+   reg [NUM_OUTPUT_QUEUES+32+48:0]          lut[LUT_DEPTH-1:0];
 
    reg                                   reset_count_inc;
    reg [LUT_DEPTH_BITS:0]                reset_count;
@@ -146,7 +150,7 @@
       cam_cmp_din      = 0;
       lut_rd_addr      = cam_match_addr;
       lut_wr_en_next   = 1'b0;
-      lut_wr_data_next = {1'b0, src_port_decoded, src_mac_latched};
+      lut_wr_data_next = {1'b0, src_port_decoded, src_ip_latched, src_mac_latched};
       lut_wr_addr_next = cam_match_addr;
       reset_count_inc  = 0;
       wr_ack_next      = 0;
@@ -273,6 +277,7 @@
          rd_ack            <= 0;
          src_port_decoded  <= 0;
          src_mac_latched   <= 0;
+         src_ip_latched    <= 0;
          lookup_ack        <= 0;
          lut_hit           <= 0;
          lut_miss          <= 0;
@@ -293,6 +298,7 @@
          rd_ack            <= rd_ack_next;
          src_port_decoded  <= latch_src ? decoded_value[src_port] : src_port_decoded;
          src_mac_latched   <= latch_src ? src_mac : src_mac_latched;
+         src_ip_latched    <= latch_src ? src_ip : src_ip_latched;
          if(lookup_ack_next) begin
             lookup_ack        <= 1;
          end

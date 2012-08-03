@@ -143,7 +143,10 @@
        .DEFAULT_MISS_OUTPUT_PORTS(DEFAULT_MISS_OUTPUT_PORTS))
    as_mac_cam_lut
      // --- lookup and learn port
-     (.dst_mac (dst_mac),
+     (
+      .dst_ip (dst_ip),
+      .src_ip (src_ip),
+      .dst_mac (dst_mac),
       .src_mac (src_mac),
       .src_port (src_port),
       .lookup_req (ip_done),
@@ -272,9 +275,9 @@
               in_fifo_rd_en   = 1;
            end
            else begin
-              if(lut_miss==1) begin
-                 pkt_drop_next   = 1;
-              end
+              //if(lut_miss==1) begin
+                 //pkt_drop_next   = 1;
+              //end
            end
         end
 

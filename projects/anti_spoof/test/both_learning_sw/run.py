@@ -13,7 +13,8 @@ for i in range(4):
     routerMAC.append("00:ca:fe:00:00:0%d"%(i+1))
     routerIP.append("192.168.%s.40"%i)
 
-num_broadcast = 10
+#num_broadcast = 10
+num_broadcast = 1
 
 pkts = []
 for i in range(num_broadcast):
@@ -30,7 +31,8 @@ for i in range(num_broadcast):
 
 nftest_barrier()
 
-num_normal = 10
+#num_normal = 10
+num_normal = 1
 
 for i in range(num_normal):
     pkt = make_IP_pkt(dst_MAC="aa:bb:cc:dd:ee:ff", src_MAC=routerMAC[1],
@@ -47,5 +49,8 @@ nftest_regread_expect(reg_defines.MAC_GRP_2_TX_QUEUE_NUM_PKTS_SENT_REG(), num_br
 nftest_regread_expect(reg_defines.MAC_GRP_3_TX_QUEUE_NUM_PKTS_SENT_REG(), num_broadcast)
 nftest_regread_expect(reg_defines.SWITCH_OP_LUT_NUM_MISSES_REG(), num_broadcast)
 nftest_regread_expect(reg_defines.SWITCH_OP_LUT_NUM_HITS_REG(), num_normal)
+
+nftest_regread_expect(reg_defines.ANTI_SPOOF_AS_NUM_MISSES_REG(), num_broadcast)
+nftest_regread_expect(reg_defines.ANTI_SPOOF_AS_NUM_HITS_REG(), num_normal)
 
 nftest_finish()

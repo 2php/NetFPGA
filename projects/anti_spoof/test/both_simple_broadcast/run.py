@@ -7,6 +7,16 @@ phy2loop0 = ('../connections/conn', [])
 nftest_init(sim_loop = [], hw_config = [phy2loop0])
 nftest_start()
 
+"""
+nftest_regwrite(reg_defines.ANTI_SPOOF_AS_MAC_LUT_WR_ADDR_REG(), 0)
+nftest_regwrite(reg_defines.ANTI_SPOOF_AS_PORTS_MAC_HI_REG(), 0xff00ff00)
+nftest_regwrite(reg_defines.ANTI_SPOOF_AS_MAC_LO_REG(), 0xff00ff00)
+
+nftest_regwrite(reg_defines.ANTI_SPOOF_AS_MAC_LUT_RD_ADDR_REG(), 0)
+tmp = nftest_regread_expect(reg_defines.ANTI_SPOOF_AS_PORTS_MAC_HI_REG(), 0x00)
+tmp = nftest_regread_expect(reg_defines.ANTI_SPOOF_AS_MAC_LO_REG(), 0x00)
+"""
+
 routerMAC = []
 routerIP = []
 for i in range(4):
@@ -35,6 +45,10 @@ tmp = nftest_regread_expect(reg_defines.MAC_GRP_1_TX_QUEUE_NUM_PKTS_SENT_REG(), 
 tmp = nftest_regread_expect(reg_defines.MAC_GRP_2_TX_QUEUE_NUM_PKTS_SENT_REG(), num_broadcast)
 tmp = nftest_regread_expect(reg_defines.MAC_GRP_3_TX_QUEUE_NUM_PKTS_SENT_REG(), num_broadcast)
 tmp = nftest_regread_expect(reg_defines.SWITCH_OP_LUT_NUM_MISSES_REG(), num_broadcast)
+# added reg read
 tmp = nftest_regread_expect(reg_defines.ANTI_SPOOF_AS_NUM_MISSES_REG(), num_broadcast)
+nftest_regwrite(reg_defines.ANTI_SPOOF_AS_MAC_LUT_WR_ADDR_REG(), 4)
+nftest_regwrite(reg_defines.ANTI_SPOOF_AS_PORTS_MAC_HI_REG(), 0xff00ff34)
+nftest_regwrite(reg_defines.ANTI_SPOOF_AS_MAC_LO_REG(), 0xff00ff12)
 
 nftest_finish()
