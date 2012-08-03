@@ -35,7 +35,7 @@ nftest_barrier()
 num_normal = 1
 
 for i in range(num_normal):
-    pkt = make_IP_pkt(dst_MAC="aa:bb:cc:dd:ee:ff", src_MAC=routerMAC[1],
+    pkt = make_IP_pkt(dst_MAC="aa:bb:cc:dd:ee:ff", src_MAC=routerMAC[0],
                       src_IP="192.168.0.1", dst_IP="192.168.1.1", pkt_len=100)
 
     nftest_send_phy('nf2c1', pkt)
@@ -43,6 +43,42 @@ for i in range(num_normal):
 
 nftest_barrier()
 
+num_broadcast = 1
+
+# this should drop
+pkts = []
+for i in range(num_broadcast):
+    pkt = make_IP_pkt(src_MAC="aa:bb:cc:dd:ee:ff", dst_MAC=routerMAC[0],
+                      src_IP="192.168.0.1", dst_IP="192.168.1.1", pkt_len=100)
+
+    nftest_send_phy('nf2c0', pkt)
+# don't expect
+#    nftest_expect_phy('nf2c1', pkt)
+#    if not isHW():
+#        nftest_expect_phy('nf2c2', pkt)	# this should fail
+#        nftest_expect_phy('nf2c3', pkt)	# this should fail
+
+nftest_barrier()
+
+# this should pass
+pkts = []
+for i in range(num_broadcast):
+    pkt = make_IP_pkt(src_MAC="aa:bb:cc:dd:de:ad", dst_MAC=routerMAC[0],
+                      src_IP="192.168.0.1", dst_IP="192.168.1.1", pkt_len=100)
+
+    nftest_send_phy('nf2c0', pkt)
+    nftest_expect_phy('nf2c1', pkt)
+    #if not isHW():
+        #nftest_expect_phy('nf2c2', pkt)
+        #nftest_expect_phy('nf2c3', pkt)
+
+
+
+nftest_barrier()
+
+
+
+"""
 nftest_regread_expect(reg_defines.MAC_GRP_0_TX_QUEUE_NUM_PKTS_SENT_REG(), num_normal)
 nftest_regread_expect(reg_defines.MAC_GRP_1_TX_QUEUE_NUM_PKTS_SENT_REG(), num_broadcast)
 nftest_regread_expect(reg_defines.MAC_GRP_2_TX_QUEUE_NUM_PKTS_SENT_REG(), num_broadcast)
@@ -52,5 +88,6 @@ nftest_regread_expect(reg_defines.SWITCH_OP_LUT_NUM_HITS_REG(), num_normal)
 
 nftest_regread_expect(reg_defines.ANTI_SPOOF_AS_NUM_MISSES_REG(), num_broadcast)
 nftest_regread_expect(reg_defines.ANTI_SPOOF_AS_NUM_HITS_REG(), num_normal)
+"""
 
 nftest_finish()

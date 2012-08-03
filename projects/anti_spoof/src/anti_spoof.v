@@ -275,9 +275,9 @@
               in_fifo_rd_en   = 1;
            end
            else begin
-              //if(lut_miss==1) begin
-                 //pkt_drop_next   = 1;
-              //end
+              if(lut_hit==1) begin
+                 pkt_drop_next   = 1;
+              end
            end
         end
 

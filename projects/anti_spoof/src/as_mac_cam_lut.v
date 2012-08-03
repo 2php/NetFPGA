@@ -182,7 +182,7 @@
               reset_count_inc = 1;
               // write the broadcast address
               lut_wr_addr_next = reset_count;
-              lut_wr_data_next = {1'b1, DEFAULT_MISS_OUTPUT_PORTS, ~48'h0};
+              lut_wr_data_next = {1'b1, DEFAULT_MISS_OUTPUT_PORTS, ~32'h0, ~48'h0};
               lut_wr_en_next = 1;
            end
            else if( !cam_we && !cam_busy) begin
@@ -204,44 +204,53 @@
               lut_rd_addr = rd_addr;
               rd_ack_next = 1;
            end
-           cam_cmp_din = dst_mac;
+           cam_cmp_din = src_mac;
+           //cam_cmp_din = dst_mac;
            if(lookup_req && !lookup_ack) begin
-              lookup_state_next = LATCH_DST_LOOKUP;
+              lookup_state_next = CHECK_SRC_MATCH;
+              //lookup_state_next = LATCH_DST_LOOKUP;
               latch_src = 1;
            end
         end // case: IDLE
 
-        LATCH_DST_LOOKUP: begin
-           /* latch the info from the lut if we have a match */
-           if(cam_match) begin
-              lookup_ack_next = 1;
-              lut_hit_next = 1;
-           end
-           /* otherwise return the default address */
-           else begin
-              lookup_ack_next = 1;
-              lut_miss_next = 1;
-           end // else: !if(cam_match)
-
-           /* if the cam is not busy, then see if the source mac is in the table */
-           cam_cmp_din = src_mac_latched;
-           if(!cam_busy) begin
-              lookup_state_next = CHECK_SRC_MATCH;
-           end
-           else begin
-              lookup_state_next = IDLE;
-           end
-        end // case: LATCH_DST_LOOKUP
+        //LATCH_DST_LOOKUP: begin
+           ///* latch the info from the lut if we have a match */
+           //if(cam_match) begin
+              //lookup_ack_next = 1;
+              //lut_hit_next = 1;
+           //end
+           ///* otherwise return the default address */
+           //else begin
+              //lookup_ack_next = 1;
+              //lut_miss_next = 1;
+           //end // else: !if(cam_match)
+//
+           ///* if the cam is not busy, then see if the source mac is in the table */
+           //cam_cmp_din = src_mac_latched;
+           //if(!cam_busy) begin
+              //lookup_state_next = CHECK_SRC_MATCH;
+           //end
+           //else begin
+              //lookup_state_next = IDLE;
+           //end
+        //end // case: LATCH_DST_LOOKUP
 
         CHECK_SRC_MATCH: begin
            /* look for an empty address in case we need it */
-           cam_cmp_din = 0;
+           //ISS ???
+           //cam_cmp_din = 0;
            /* if we have a match then wait for lut output */
            if(cam_match) begin
+              //ISS ???
+              lookup_ack_next = 1;
+              lut_hit_next = 1;
               lookup_state_next = UPDATE_ENTRY;
            end
            /* otherwise we need to add the entry */
            else begin
+              //ISS ???
+              lookup_ack_next = 1;
+              lut_miss_next = 1;
               lookup_state_next = ADD_ENTRY;
            end
         end // case: CHECK_SRC_MATCH
