@@ -99,8 +99,8 @@
    wire [47:0]                  wr_mac;           // data to match in the CAM
    wire                         wr_ack;           // pulses high when wr is done
 
-   wire                         lut_hit;          // pulses high on a hit
-   wire                         lut_miss;         // pulses high on a miss
+   wire                         lut_drop;          // pulses high on a hit
+   wire                         lut_pass;         // pulses high on a miss
 
    reg                          in_fifo_rd_en;
    wire [CTRL_WIDTH-1:0]        in_fifo_ctrl_dout;
@@ -171,8 +171,8 @@
       .wr_ack (wr_ack),
 
       // --- Register signals
-      .lut_hit (lut_hit),          // pulses high on a hit
-      .lut_miss (lut_miss),         // pulses high on a miss
+      .lut_drop (lut_drop),          // pulses high on a hit
+      .lut_pass (lut_pass),         // pulses high on a miss
 
       // --- Misc
       .clk (clk),
@@ -197,7 +197,7 @@
    small_fifo #(.WIDTH(NUM_OUTPUT_QUEUES), .MAX_DEPTH_BITS(2))
       as_dst_port_fifo
         (.din (dst_ports),     // Data in
-         .wr_en (lut_hit|lut_miss),             // Write enable
+         .wr_en (lut_drop|lut_pass),             // Write enable
          .rd_en (dst_port_rd),       // Read the next word
          .dout (dst_ports_latched),
          .full (),
@@ -244,8 +244,8 @@
       .rd_mac                           (rd_mac),
       .rd_ack                           (rd_ack),
       .wr_ack                           (wr_ack),
-      .lut_hit                          (lut_hit),
-      .lut_miss                         (lut_miss),
+      .lut_hit                          (lut_drop),
+      .lut_miss                         (lut_pass),
       .clk                              (clk),
       .reset                            (reset));
 
@@ -275,7 +275,7 @@
               in_fifo_rd_en   = 1;
            end
            else begin
-              if(lut_hit==1) begin
+              if(lut_drop==1) begin
                  pkt_drop_next   = 1;
               end
            end

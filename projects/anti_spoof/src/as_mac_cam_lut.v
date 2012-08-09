@@ -45,8 +45,8 @@
      output reg                         wr_ack,
 
      // --- Register signals
-     output reg                         lut_hit,          // pulses high on a hit
-     output reg                         lut_miss,         // pulses high on a miss
+     output reg                         lut_drop,          // pulses high on a hit
+     output reg                         lut_pass,         // pulses high on a miss
 
      // --- Misc
      input                              clk,
@@ -68,11 +68,12 @@
    //--------------------- Internal Parameter-------------------------
    parameter RESET            = 1;
    parameter IDLE             = 2;
-   parameter CHECK_SPOOF      = 4;
+   parameter CHECK_SPOOF_IP   = 4;
+   parameter CHECK_SPOOF_MAC  = 8;
    //parameter LATCH_DST_LOOKUP = 4;
-   parameter CHECK_SRC_MATCH  = 8;
-   parameter UPDATE_ENTRY     = 16;
-   parameter ADD_ENTRY        = 32;
+   parameter CHECK_SRC_MATCH  = 16;
+   parameter UPDATE_ENTRY     = 32;
+   parameter ADD_ENTRY        = 64;
 
    //---------------------- Wires and regs----------------------------
 
@@ -91,7 +92,7 @@
    reg  [31:0]                           src_ip_latched;
    reg                                   latch_src;
 
-   reg  [5:0]                            lookup_state, lookup_state_next;
+   reg  [6:0]                            lookup_state, lookup_state_next;
 
    reg [LUT_DEPTH_BITS-1:0]              lut_rd_addr, lut_wr_addr, lut_wr_addr_next;
    reg                                   lut_wr_en, lut_wr_en_next;
@@ -100,12 +101,13 @@
    reg [NUM_OUTPUT_QUEUES+32+48:0]          lut_rd_data;
    reg [NUM_OUTPUT_QUEUES+32+48:0]          lut[LUT_DEPTH-1:0];
    reg [31:0]                               lut_rd_ip, lut_rd_ip_next;
+   reg  [NUM_OUTPUT_QUEUES-1:0]          lut_src_port_decoded, lut_src_port_decoded_next;
 
    reg                                   reset_count_inc;
    reg [LUT_DEPTH_BITS:0]                reset_count;
    reg                                   wr_ack_next, rd_ack_next;
    reg                                   lookup_ack_next;
-   reg                                   lut_hit_next, lut_miss_next;
+   reg                                   lut_drop_next, lut_pass_next;
 
    //------------------------- Modules-------------------------------
 
@@ -141,7 +143,7 @@
 
    /* if we get a miss then set the dst port to the default ports
     * without the source */
-   assign dst_ports = (lookup_ack & lut_miss) ? (DEFAULT_MISS_OUTPUT_PORTS & ~src_port_decoded)
+   assign dst_ports = (lookup_ack & lut_pass) ? (DEFAULT_MISS_OUTPUT_PORTS & ~src_port_decoded)
                                            : (rd_oq & ~src_port_decoded);
 
    assign entry_needs_update = ((rd_oq!=src_port_decoded) && !rd_wr_protect);
@@ -160,8 +162,8 @@
       rd_ack_next      = 0;
       latch_src        = 0;
       lookup_ack_next  = 0;
-      lut_hit_next     = 0;
-      lut_miss_next    = 0;
+      lut_drop_next     = 0;
+      lut_pass_next    = 0;
 
       lookup_state_next = lookup_state;
 
@@ -220,12 +222,12 @@
            ///* latch the info from the lut if we have a match */
            //if(cam_match) begin
               //lookup_ack_next = 1;
-              //lut_hit_next = 1;
+              //lut_drop_next = 1;
            //end
            ///* otherwise return the default address */
            //else begin
               //lookup_ack_next = 1;
-              //lut_miss_next = 1;
+              //lut_pass_next = 1;
            //end // else: !if(cam_match)
 //
            ///* if the cam is not busy, then see if the source mac is in the table */
@@ -246,29 +248,46 @@
            if(cam_match) begin
               //ISS ???
               lookup_ack_next = 1;
-              //lut_hit_next = 1;
-              lookup_state_next = CHECK_SPOOF;
+              //lut_drop_next = 1;
+              lookup_state_next = CHECK_SPOOF_IP;
               lut_rd_ip_next <= lut_rd_data[32+47:48];
+              lut_src_port_decoded_next <= lut_rd_data[NUM_OUTPUT_QUEUES+32+47:32+48];
            end
            /* otherwise we need to add the entry */
            else begin
               //ISS ???
               lookup_ack_next = 1;
-              lut_miss_next = 1;
+              lut_pass_next = 1;
               lookup_state_next = ADD_ENTRY;
            end
         end // case: CHECK_SRC_MATCH
         
-        CHECK_SPOOF: begin
+        CHECK_SPOOF_IP: begin
            // read src ip from lut
            // if packet's src ip is different then LUT
            // then ask for drop
            if(src_ip_latched != lut_rd_ip) begin	
-              lut_hit_next = 1;
+              lut_drop_next = 1;
+              //lookup_ack_next = 1;
+              lookup_state_next = IDLE;
+           end
+           else begin
+              lookup_state_next = CHECK_SPOOF_MAC;
+           end
+        end // case: CHECK_SPOOF_IP
+/*
+ * check if port infomation is the same ..
+ */
+        CHECK_SPOOF_MAC: begin
+           // read src ip from lut
+           // if packet's src ip is different then LUT
+           // then ask for drop
+           if(src_port_decoded != lut_src_port_decoded) begin	
+              lut_drop_next = 1;
               //lookup_ack_next = 1;
            end
            lookup_state_next = IDLE;
-        end // case: CHECK_SPOOF
+        end // case: CHECK_SPOOF_MAC
 
         UPDATE_ENTRY: begin
            if(entry_needs_update) begin
@@ -303,8 +322,8 @@
          src_mac_latched   <= 0;
          src_ip_latched    <= 0;
          lookup_ack        <= 0;
-         lut_hit           <= 0;
-         lut_miss          <= 0;
+         lut_drop          <= 0;
+         lut_pass          <= 0;
          cam_match_addr_d1 <= 0;
 
          cam_wr_addr       <= 0;
@@ -314,6 +333,7 @@
          lut_wr_data       <= 0;
          lut_wr_addr       <= 0;
          lut_rd_ip         <= 0;
+         lut_src_port_decoded         <= 0;
 
          lookup_state      <= RESET;
       end
@@ -330,8 +350,8 @@
          else if(!lookup_req) begin
             lookup_ack        <= 0;
          end
-         lut_hit           <= lut_hit_next;
-         lut_miss          <= lut_miss_next;
+         lut_drop           <= lut_drop_next;
+         lut_pass          <= lut_pass_next;
 
          lut_rd_data       <= lut[lut_rd_addr];
          if(lut_wr_en) begin
@@ -349,6 +369,7 @@
 
          lookup_state      <= lookup_state_next;
          lut_rd_ip         <= lut_rd_ip_next;
+         lut_src_port_decoded         <= lut_src_port_decoded_next;
       end
    end
 
