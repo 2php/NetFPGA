@@ -23,6 +23,7 @@ for i in range(num_broadcast):
                       src_IP="192.168.0.1", dst_IP="192.168.1.1", pkt_len=100)
 
     nftest_send_phy('nf2c0', pkt)
+# for mac debugging
     nftest_expect_phy('nf2c1', pkt)
     if not isHW():
         nftest_expect_phy('nf2c2', pkt)
@@ -38,7 +39,7 @@ num_broadcast = 1
 pkts = []
 for i in range(num_broadcast):
     pkt = make_IP_pkt(src_MAC="aa:bb:cc:dd:ee:ff", dst_MAC=routerMAC[0],
-                      src_IP="192.168.0.2", dst_IP="192.168.1.1", pkt_len=100)
+                      src_IP="192.168.0.2", dst_IP="192.168.1.11", pkt_len=100)
 
     nftest_send_phy('nf2c0', pkt)
 # don't expect
@@ -54,12 +55,26 @@ pkts = []
 for i in range(num_broadcast):
     pkt = make_IP_pkt(src_MAC="aa:bb:cc:dd:de:ad", dst_MAC=routerMAC[0],
                       src_IP="192.168.0.1", dst_IP="192.168.1.1", pkt_len=100)
-
+#
     nftest_send_phy('nf2c0', pkt)
     nftest_expect_phy('nf2c1', pkt)
+    if not isHW():
+        nftest_expect_phy('nf2c2', pkt)
+        nftest_expect_phy('nf2c3', pkt)
+nftest_barrier()
+
+# this should drop due to MAC spoof
+pkts = []
+for i in range(num_broadcast):
+    pkt = make_IP_pkt(src_MAC="aa:bb:cc:dd:ee:ff", dst_MAC=routerMAC[0],
+                      src_IP="192.168.0.1", dst_IP="192.168.1.1", pkt_len=100)
+
+    nftest_send_phy('nf2c0', pkt)
+## for mac debugging
+    #nftest_expect_phy('nf2c0', pkt)
     #if not isHW():
         #nftest_expect_phy('nf2c2', pkt)
         #nftest_expect_phy('nf2c3', pkt)
-nftest_barrier()
 
+nftest_barrier()
 nftest_finish()
